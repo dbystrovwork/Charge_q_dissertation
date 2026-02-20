@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import csr_matrix, diags
+from scipy.sparse.linalg import eigsh
 
 
 def magnetic_laplacian(edges, num_nodes, q, normalized=False):
@@ -44,3 +45,23 @@ def magnetic_laplacian(edges, num_nodes, q, normalized=False):
         # L_U = D_s - H
         D_s = diags(d_s, dtype=complex)
         return D_s - H
+
+
+def magnetic_laplacian_eig(edges, num_nodes, q, k, normalized=False):
+    """
+    Compute the first k eigenvalues/eigenvectors of the magnetic Laplacian.
+
+    Args:
+        edges: List of (i, j) tuples for directed edges i -> j
+        num_nodes: Number of nodes
+        q: Magnetic potential parameter
+        k: Number of eigenvalues to compute
+        normalized: If True, use normalized Laplacian
+
+    Returns:
+        eigenvalues: Array of k smallest eigenvalues (real)
+        eigenvectors: Array of shape (num_nodes, k)
+    """
+    L = magnetic_laplacian(edges, num_nodes, q, normalized)
+    eigenvalues, eigenvectors = eigsh(L, k=k, which='SM')
+    return eigenvalues, eigenvectors
