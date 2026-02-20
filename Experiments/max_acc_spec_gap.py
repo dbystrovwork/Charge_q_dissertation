@@ -6,14 +6,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import adjusted_rand_score
 
-from magnetic_laplacian.network_generation import dsbm_cycle
+plt.style.use("seaborn-v0_8-paper")
+
+from networks.dsbm import dsbm_cycle
 from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 from magnetic_laplacian.spectral_clustering import spectral_clustering
 
 # Parameters
 SEED = 42
-K = 5        # Number of communities
-N_PER_CLASS = 50   # Nodes per community
+K = 8      # Number of communities
+N_PER_CLASS = 100   # Nodes per community
 P = 0.2           # Within-community prob
 S = 0.2           # Forward edge prob
 R = 0.05           # Noise prob
