@@ -10,18 +10,18 @@ plt.style.use("seaborn-v0_8-paper")
 from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 from spectral_vis import plot_eigenvalues_vs_q
 
-from networks.simple_cycles import directed_cycle
+from networks.simple_cycles import directed_cycle, directed_cycle_flipped, nested_cycles, cycles_from_node
 from networks.dsbm import dsbm_cycle
 
 # === Parameters ===
-N = 7
-K = 8
+N = 7 
+K = 10
 N_PER_CLASS = 50
 P, S, R = 0.2, 0.2, 0.05
 SEED = 42
 
 # === Generate graph (uncomment one) ===
-edges = directed_cycle(N); num_nodes = N; k = 3
+edges, x = cycles_from_node([3, 6]); num_nodes = x; k = 3
 # edges, _ = dsbm_cycle(K, N_PER_CLASS, P, S, R, seed=SEED); num_nodes = K * N_PER_CLASS; k = K
 
 # === Compute eigenvalues over q ===
