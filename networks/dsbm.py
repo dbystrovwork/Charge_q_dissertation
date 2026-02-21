@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 import numpy as np
 
+from .small_world import directed_small_world
+
 
 def dsbm_cycle_general(k, n_per_class, p, fwd, bwd, r, seed=None):
     """
@@ -118,6 +120,7 @@ _GENERATORS = {
     "dsbm_cycle": dsbm_cycle,
     "dsbm_cycle_general": dsbm_cycle_general,
     "nested_dsbm_cycle": nested_dsbm_cycle,
+    "directed_small_world": directed_small_world,
 }
 
 
@@ -146,6 +149,8 @@ def generate_graph(graph_type, seed=None, **overrides):
 
     if graph_type == "nested_dsbm_cycle":
         num_nodes = config["c1"] * config["c2"] * config["n_per_block"]
+    elif graph_type == "directed_small_world":
+        num_nodes = config["n"]
     else:
         num_nodes = config["k"] * config["n_per_class"]
 
