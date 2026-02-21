@@ -8,7 +8,7 @@ from sklearn.metrics import adjusted_rand_score
 
 plt.style.use("seaborn-v0_8-paper")
 
-from networks.dsbm import dsbm_cycle
+from networks.dsbm import generate_graph
 from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 from magnetic_laplacian.spectral_clustering import spectral_clustering
 from Metrics.fdr import fisher_discriminant_ratio
@@ -34,12 +34,11 @@ def fubini_study_distance(vecs_a, vecs_b):
     return np.arccos(overlaps)
 
 
+GRAPH_TYPE = "dsbm_cycle_general"
+
+
 def spectral_gap_accuracy_experiment(
-    K=7,
-    n_per_class=50,
-    p=0.2,
-    s=0.2,
-    r=0.05,
+    graph_type=GRAPH_TYPE,
     q_values=None,
     n_repeats=1,
     seed=42,
@@ -70,7 +69,6 @@ def spectral_gap_accuracy_experiment(
     if q_values is None:
         q_values = np.linspace(0, 0.5, 50)
 
-    num_nodes = K * n_per_class
     rng = np.random.default_rng(seed)
 
     all_eigs = []
@@ -81,7 +79,8 @@ def spectral_gap_accuracy_experiment(
 
     for rep in range(n_repeats):
         rep_seed = rng.integers(0, 2**31)
-        edges, true_labels = dsbm_cycle(K, n_per_class, p, s, r, seed=rep_seed)
+        edges, true_labels, num_nodes = generate_graph(graph_type, seed=rep_seed)
+        K = len(np.unique(true_labels))
 
         eigs_this_rep = []
         gaps_this_rep = []
