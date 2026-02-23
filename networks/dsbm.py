@@ -3,6 +3,10 @@ from pathlib import Path
 import numpy as np
 
 from .small_world import directed_small_world
+from .cora_ml import load_cora_ml
+from .citeseer import load_citeseer
+from .c_elegans import load_c_elegans
+from .food_web import load_food_web
 
 
 def dsbm_cycle_general(k, n_per_class, p, fwd, bwd, r, seed=None):
@@ -123,6 +127,13 @@ _GENERATORS = {
     "directed_small_world": directed_small_world,
 }
 
+_LOADERS = {
+    "cora_ml": load_cora_ml,
+    "citeseer": load_citeseer,
+    "c_elegans": load_c_elegans,
+    "food_web": load_food_web,
+}
+
 
 def load_config():
     with open(CONFIG_PATH) as f:
@@ -131,16 +142,22 @@ def load_config():
 
 def generate_graph(graph_type, seed=None, **overrides):
     """
-    Generate a graph from config with optional parameter overrides.
+    Generate or load a graph by type.
 
     Args:
-        graph_type: One of "dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle"
-        seed: Random seed
-        **overrides: Override any config parameter
+        graph_type: A generator name ("dsbm_cycle", "dsbm_cycle_general",
+            "nested_dsbm_cycle", "directed_small_world") or a real-world
+            dataset name ("cora_ml", "citeseer", "c_elegans", "food_web").
+        seed: Random seed (only used for generators, ignored for datasets)
+        **overrides: Override any config parameter (generators only)
 
     Returns:
         edges, labels, num_nodes
+        (labels is None for datasets without ground-truth communities)
     """
+    if graph_type in _LOADERS:
+        return _LOADERS[graph_type]()
+
     config = load_config()[graph_type]
     config.update(overrides)
     config["seed"] = seed

@@ -34,11 +34,12 @@ def fubini_study_distance(vecs_a, vecs_b):
     return np.arccos(overlaps)
 
 
-GRAPH_TYPE = "dsbm_cycle_general"
+GRAPH_TYPE = "food_web"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 
 def spectral_gap_accuracy_experiment(
     graph_type=GRAPH_TYPE,
+    k=6,
     q_values=None,
     n_repeats=1,
     seed=42,
@@ -51,20 +52,18 @@ def spectral_gap_accuracy_experiment(
     Run spectral gap vs clustering accuracy experiment over q values.
 
     Args:
+        graph_type: Generator or dataset name (e.g. "dsbm_cycle", "cora_ml",
+            "c_elegans", "food_web").
+        k: Number of eigenvalues/clusters. Required for datasets without
+           labels (c_elegans, food_web). Inferred from labels when available.
         plot_eigenvalues: If True, plot eigenvalues. If False, plot spectral gaps.
-        plot_fdr: If True, compute and plot FDR heatmap.
+        plot_fdr: If True, compute and plot FDR heatmap (requires labels).
         plot_fubini_study: If True, compute and plot Fubini-Study distance between
             eigenvectors at consecutive q values.
 
     Returns:
-        q_values: array of q values tested
-        mean_eigs: (num_q, K) mean eigenvalues
-        mean_gaps: (num_q, K-1) mean spectral gaps
-        std_gaps: (num_q, K-1) std of spectral gaps
-        mean_ari: (num_q,) mean ARI scores
-        std_ari: (num_q,) std of ARI scores
-        mean_fdr: (num_q, K) mean FDR per eigenvector, or None if plot_fdr=False
-        mean_fs_dist: (num_q-1, K) mean Fubini-Study distances, or None if plot_fubini_study=False
+        q_values, mean_eigs, mean_gaps, std_gaps, mean_ari, std_ari, mean_fdr, mean_fs_dist
+        (mean_ari/std_ari/mean_fdr are None when the dataset has no labels)
     """
     if q_values is None:
         q_values = np.linspace(0, 0.5, 50)
@@ -80,7 +79,20 @@ def spectral_gap_accuracy_experiment(
     for rep in range(n_repeats):
         rep_seed = rng.integers(0, 2**31)
         edges, true_labels, num_nodes = generate_graph(graph_type, seed=rep_seed)
-        K = len(np.unique(true_labels))
+
+        has_labels = true_labels is not None
+        if has_labels:
+            K = len(np.unique(true_labels))
+        elif k is not None:
+            K = k
+        else:
+            raise ValueError(
+                f"Graph '{graph_type}' has no labels; pass k= explicitly"
+            )
+
+        # Disable label-dependent plots when no ground truth
+        compute_ari = has_labels
+        compute_fdr = plot_fdr and has_labels
 
         eigs_this_rep = []
         gaps_this_rep = []
@@ -98,7 +110,7 @@ def spectral_gap_accuracy_experiment(
             eigs_this_rep.append(sorted_eigs)
             gaps_this_rep.append(np.diff(sorted_eigs))
 
-            if plot_fdr:
+            if compute_fdr:
                 fdr = fisher_discriminant_ratio(eigenvectors.real, true_labels)
                 fdrs_this_rep.append(fdr)
 
@@ -108,71 +120,83 @@ def spectral_gap_accuracy_experiment(
                     fs_dists_this_rep.append(fs_dist)
                 prev_eigenvectors = eigenvectors
 
-            pred_labels = spectral_clustering(eigenvectors, K)
-            ari = adjusted_rand_score(true_labels, pred_labels)
-            aris_this_rep.append(ari)
+            if compute_ari:
+                pred_labels = spectral_clustering(eigenvectors, K)
+                ari = adjusted_rand_score(true_labels, pred_labels)
+                aris_this_rep.append(ari)
 
         all_eigs.append(eigs_this_rep)
         all_gaps.append(gaps_this_rep)
-        all_aris.append(aris_this_rep)
-        if plot_fdr:
+        if compute_ari:
+            all_aris.append(aris_this_rep)
+        if compute_fdr:
             all_fdrs.append(fdrs_this_rep)
         if plot_fubini_study:
             all_fs_dists.append(fs_dists_this_rep)
 
     all_eigs = np.array(all_eigs)  # (n_repeats, num_q, K)
     all_gaps = np.array(all_gaps)  # (n_repeats, num_q, K-1)
-    all_aris = np.array(all_aris)  # (n_repeats, num_q)
 
     mean_eigs = all_eigs.mean(axis=0)
     mean_gaps = all_gaps.mean(axis=0)
     std_gaps = all_gaps.std(axis=0)
-    mean_ari = all_aris.mean(axis=0)
-    std_ari = all_aris.std(axis=0)
-    mean_fdr = np.array(all_fdrs).mean(axis=0) if plot_fdr else None  # (num_q, K)
-    mean_fs_dist = np.array(all_fs_dists).mean(axis=0) if plot_fubini_study else None  # (num_q-1, K)
+
+    if compute_ari:
+        all_aris = np.array(all_aris)
+        mean_ari = all_aris.mean(axis=0)
+        std_ari = all_aris.std(axis=0)
+    else:
+        mean_ari = std_ari = None
+
+    mean_fdr = np.array(all_fdrs).mean(axis=0) if compute_fdr else None
+    mean_fs_dist = np.array(all_fs_dists).mean(axis=0) if plot_fubini_study else None
 
     if plot:
-        n_cols = 2 + int(plot_fdr) + int(plot_fubini_study)
+        n_cols = 1 + int(compute_ari) + int(compute_fdr) + int(plot_fubini_study)
         fig, axes = plt.subplots(1, n_cols, figsize=(6 * n_cols, 4))
+        if n_cols == 1:
+            axes = [axes]
 
+        col = 0
         if plot_eigenvalues:
             for i in range(K):
-                axes[0].plot(q_values, mean_eigs[:, i], label=f'λ{i+1}')
-            axes[0].set_ylabel('Eigenvalue')
-            axes[0].set_title('Eigenvalues vs q')
+                axes[col].plot(q_values, mean_eigs[:, i], label=f'λ{i+1}')
+            axes[col].set_ylabel('Eigenvalue')
+            axes[col].set_title('Eigenvalues vs q')
         else:
             for i in range(K - 1):
-                axes[0].plot(q_values, mean_gaps[:, i], label=f'λ{i+2} - λ{i+1}')
+                axes[col].plot(q_values, mean_gaps[:, i], label=f'λ{i+2} - λ{i+1}')
                 if n_repeats > 1:
-                    axes[0].fill_between(
+                    axes[col].fill_between(
                         q_values,
                         mean_gaps[:, i] - std_gaps[:, i],
                         mean_gaps[:, i] + std_gaps[:, i],
                         alpha=0.2
                     )
-            axes[0].set_ylabel('Spectral Gap')
-            axes[0].set_title('Spectral Gaps vs q')
+            axes[col].set_ylabel('Spectral Gap')
+            axes[col].set_title('Spectral Gaps vs q')
 
-        axes[0].set_xlabel('q')
-        axes[0].legend()
-        axes[0].grid(True)
+        axes[col].set_xlabel('q')
+        axes[col].legend()
+        axes[col].grid(True)
+        col += 1
 
-        axes[1].plot(q_values, mean_ari)
-        if n_repeats > 1:
-            axes[1].fill_between(
-                q_values,
-                mean_ari - std_ari,
-                mean_ari + std_ari,
-                alpha=0.2
-            )
-        axes[1].set_xlabel('q')
-        axes[1].set_ylabel('ARI')
-        axes[1].set_title('Clustering Accuracy vs q')
-        axes[1].grid(True)
+        if compute_ari:
+            axes[col].plot(q_values, mean_ari)
+            if n_repeats > 1:
+                axes[col].fill_between(
+                    q_values,
+                    mean_ari - std_ari,
+                    mean_ari + std_ari,
+                    alpha=0.2
+                )
+            axes[col].set_xlabel('q')
+            axes[col].set_ylabel('ARI')
+            axes[col].set_title('Clustering Accuracy vs q')
+            axes[col].grid(True)
+            col += 1
 
-        col = 2
-        if plot_fdr:
+        if compute_fdr:
             im = axes[col].imshow(
                 mean_fdr.T,
                 aspect='auto',
