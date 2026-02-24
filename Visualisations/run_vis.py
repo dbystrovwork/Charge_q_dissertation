@@ -11,27 +11,25 @@ from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 from spectral_vis import plot_eigenvalues_vs_q
 
 from networks.simple_cycles import directed_cycle, directed_cycle_flipped, nested_cycles, cycles_from_node
-from networks.dsbm import dsbm_cycle
+from networks.dsbm import dsbm_cycle, dsbm_cycle_general, nested_dsbm_cycle, generate_graph
 from networks.cora_ml import load_cora_ml
 from networks.citeseer import load_citeseer
 from networks.c_elegans import load_c_elegans
 from networks.food_web import load_food_web
 
 # === Parameters ===
-N = 7
-K = 10
-N_PER_CLASS = 50
-P, S, R = 0.2, 0.2, 0.05
 SEED = 42
 
 # === Select graph ===
-# Options: "cycles", "dsbm", "cora_ml", "citeseer", "c_elegans", "food_web"
-GRAPH = "c_elegans"
+# Options: "cycles", "dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle",
+#          "directed_small_world", "cora_ml", "citeseer", "c_elegans", "food_web"
+GRAPH = "nested_dsbm_cycle"
 
 if GRAPH == "cycles":
     edges, num_nodes = cycles_from_node([3, 6]); k = 3
-elif GRAPH == "dsbm":
-    edges, _ = dsbm_cycle(K, N_PER_CLASS, P, S, R, seed=SEED); num_nodes = K * N_PER_CLASS; k = K
+elif GRAPH in ("dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle", "directed_small_world"):
+    edges, labels, num_nodes = generate_graph(GRAPH, seed=SEED)
+    k = 3
 elif GRAPH == "cora_ml":
     edges, labels, num_nodes = load_cora_ml(); k = len(np.unique(labels))
 elif GRAPH == "citeseer":
@@ -44,7 +42,7 @@ else:
     raise ValueError(f"Unknown graph: {GRAPH}")
 
 # === Compute eigenvalues over q ===
-q_values = np.linspace(0, 0.5, 50)
+q_values = np.linspace(0, 0.5, 100)
 all_eigenvalues = []
 
 for q in q_values:
