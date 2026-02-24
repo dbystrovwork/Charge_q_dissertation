@@ -4,7 +4,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import adjusted_rand_score
+from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 
 plt.style.use("seaborn-v0_8-paper")
 
@@ -34,7 +34,7 @@ def fubini_study_distance(vecs_a, vecs_b):
     return np.arccos(overlaps)
 
 
-GRAPH_TYPE = "food_web"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+GRAPH_TYPE = "nested_dsbm_cycle"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 
 def spectral_gap_accuracy_experiment(
@@ -46,7 +46,8 @@ def spectral_gap_accuracy_experiment(
     plot=True,
     plot_eigenvalues=True,
     plot_fdr=True,
-    plot_fubini_study=True
+    plot_fubini_study=True,
+    metric="ari"
 ):
     """
     Run spectral gap vs clustering accuracy experiment over q values.
@@ -60,10 +61,12 @@ def spectral_gap_accuracy_experiment(
         plot_fdr: If True, compute and plot FDR heatmap (requires labels).
         plot_fubini_study: If True, compute and plot Fubini-Study distance between
             eigenvectors at consecutive q values.
+        metric: Clustering accuracy metric — "ari" for Adjusted Rand Index
+            or "nmi" for Normalized Mutual Information.
 
     Returns:
-        q_values, mean_eigs, mean_gaps, std_gaps, mean_ari, std_ari, mean_fdr, mean_fs_dist
-        (mean_ari/std_ari/mean_fdr are None when the dataset has no labels)
+        q_values, mean_eigs, mean_gaps, std_gaps, mean_acc, std_acc, mean_fdr, mean_fs_dist
+        (mean_acc/std_acc/mean_fdr are None when the dataset has no labels)
     """
     if q_values is None:
         q_values = np.linspace(0, 0.5, 50)
@@ -122,8 +125,11 @@ def spectral_gap_accuracy_experiment(
 
             if compute_ari:
                 pred_labels = spectral_clustering(eigenvectors, K)
-                ari = adjusted_rand_score(true_labels, pred_labels)
-                aris_this_rep.append(ari)
+                if metric == "nmi":
+                    score = normalized_mutual_info_score(true_labels, pred_labels)
+                else:
+                    score = adjusted_rand_score(true_labels, pred_labels)
+                aris_this_rep.append(score)
 
         all_eigs.append(eigs_this_rep)
         all_gaps.append(gaps_this_rep)
@@ -190,9 +196,10 @@ def spectral_gap_accuracy_experiment(
                     mean_ari + std_ari,
                     alpha=0.2
                 )
+            metric_label = "NMI" if metric == "nmi" else "ARI"
             axes[col].set_xlabel('q')
-            axes[col].set_ylabel('ARI')
-            axes[col].set_title('Clustering Accuracy vs q')
+            axes[col].set_ylabel(metric_label)
+            axes[col].set_title(f'Clustering {metric_label} vs q')
             axes[col].grid(True)
             col += 1
 
@@ -232,4 +239,4 @@ def spectral_gap_accuracy_experiment(
 
 
 if __name__ == "__main__":
-    spectral_gap_accuracy_experiment(n_repeats=5)
+    spectral_gap_accuracy_experiment(n_repeats=5, metric="nmi")

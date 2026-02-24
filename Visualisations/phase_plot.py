@@ -18,8 +18,8 @@ SEED = 42
 # === Select graph (labelled only) ===
 # Options: "dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle",
 #          "directed_small_world", "cora_ml", "citeseer"
-GRAPH = "dsbm_cycle_general"
-Q = 0.25
+GRAPH = "nested_dsbm_cycle"
+Q = 0.3
 EIGENVECTOR = 1  # 1-indexed
 
 if GRAPH in ("dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle", "directed_small_world"):
@@ -30,6 +30,10 @@ elif GRAPH == "citeseer":
     edges, labels, num_nodes = load_citeseer()
 else:
     raise ValueError(f"Unknown or unlabelled graph: {GRAPH}")
+
+
+if GRAPH == "nested_dsbm_cycle":
+    labels = labels%5
 
 K = len(np.unique(labels))
 

@@ -23,7 +23,7 @@ SEED = 42
 # === Select graph ===
 # Options: "cycles", "dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle",
 #          "directed_small_world", "cora_ml", "citeseer", "c_elegans", "food_web"
-GRAPH = "nested_dsbm_cycle"
+GRAPH = "food_web"
 
 if GRAPH == "cycles":
     edges, num_nodes = cycles_from_node([3, 6]); k = 3
