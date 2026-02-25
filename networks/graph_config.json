@@ -1,7 +1,7 @@
 {
     "dsbm_cycle": {
-        "k": 5,
-        "n_per_class": 100,
+        "k": 8,
+        "n_per_class": 10,
         "p": 0.3,
         "s": 0.1,
         "r": 0.05
