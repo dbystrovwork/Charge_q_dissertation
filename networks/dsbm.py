@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from .small_world import directed_small_world
+from .barabasi_albert import barabasi_albert, directed_barabasi_albert
 from .cora_ml import load_cora_ml
 from .citeseer import load_citeseer
 from .c_elegans import load_c_elegans
@@ -152,6 +153,8 @@ _GENERATORS = {
     "nested_dsbm_cycle": nested_dsbm_cycle,
     "directed_small_world": directed_small_world,
     "directed_erdos_renyi": directed_erdos_renyi,
+    "barabasi_albert": barabasi_albert,
+    "directed_barabasi_albert": directed_barabasi_albert,
 }
 
 _LOADERS = {
@@ -193,7 +196,8 @@ def generate_graph(graph_type, seed=None, **overrides):
 
     if graph_type == "nested_dsbm_cycle":
         num_nodes = config["c1"] * config["c2"] * config["n_per_block"]
-    elif graph_type in ("directed_small_world", "directed_erdos_renyi"):
+    elif graph_type in ("directed_small_world", "directed_erdos_renyi",
+                         "barabasi_albert", "directed_barabasi_albert"):
         num_nodes = config["n"]
     else:
         num_nodes = config["k"] * config["n_per_class"]

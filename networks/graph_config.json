@@ -1,7 +1,7 @@
 {
     "dsbm_cycle": {
         "k": 8,
-        "n_per_class": 20,
+        "n_per_class": 100,
         "p": 0.3,
         "s": 0.1,
         "r": 0.05
@@ -31,5 +31,13 @@
     "directed_erdos_renyi": {
         "n": 200,
         "p": 0.05
+    },
+    "barabasi_albert": {
+        "n": 500,
+        "m": 3
+    },
+    "directed_barabasi_albert": {
+        "n": 200,
+        "m": 3
     }
 }

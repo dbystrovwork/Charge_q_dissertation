@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 plt.style.use("seaborn-v0_8-paper")
 
-from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 from spectral_vis import plot_eigenvalues_vs_q
 
 from networks.simple_cycles import directed_cycle, directed_cycle_flipped, nested_cycles, cycles_from_node

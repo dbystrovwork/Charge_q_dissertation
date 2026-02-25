@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 plt.style.use("seaborn-v0_8-paper")
 
 from networks.dsbm import generate_graph
-from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 from graph_plot import plot_graph
 
 

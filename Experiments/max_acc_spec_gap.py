@@ -9,8 +9,8 @@ from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
 plt.style.use("seaborn-v0_8-paper")
 
 from networks.dsbm import generate_graph
-from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
-from magnetic_laplacian.spectral_clustering import spectral_clustering
+from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from laplacians.magnetic_laplacian.spectral_clustering import spectral_clustering
 from Metrics.fdr import fisher_discriminant_ratio
 
 

@@ -10,8 +10,8 @@ plt.style.use("seaborn-v0_8-paper")
 from sklearn.metrics import normalized_mutual_info_score
 
 from networks.dsbm import generate_graph
-from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
-from magnetic_laplacian.spectral_clustering import spectral_clustering
+from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from laplacians.magnetic_laplacian.spectral_clustering import spectral_clustering
 
 
 def inverse_participation_ratio(vec):
@@ -32,7 +32,7 @@ def inverse_participation_ratio(vec):
     return np.sum(np.abs(vec) ** 4)
 
 
-GRAPH_TYPE = "directed_erdos_renyi"
+GRAPH_TYPE = "dsbm_cycle"  
 
 
 def localization_experiment(
@@ -42,7 +42,7 @@ def localization_experiment(
     n_repeats=1,
     seed=42,
     plot=True,
-    plot_nmi=False,
+    plot_nmi=True,
 ):
     """
     Measure eigenvector localization (IPR) as a function of q.

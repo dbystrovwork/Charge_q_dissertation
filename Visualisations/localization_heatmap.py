@@ -9,7 +9,7 @@ from matplotlib.gridspec import GridSpec
 plt.style.use("seaborn-v0_8-paper")
 
 from networks.dsbm import generate_graph
-from magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 
 
 def plot_localization_heatmap(edges, num_nodes, q, k, labels=None):
@@ -90,10 +90,10 @@ def plot_localization_heatmap(edges, num_nodes, q, k, labels=None):
     return fig
 
 
-GRAPH_TYPE = "dsbm_cycle"
+GRAPH_TYPE = "barabasi_albert"
 
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_localization_heatmap(edges, num_nodes, q=0.3, k=6, labels=true_labels)
+    plot_localization_heatmap(edges, num_nodes, q=0, k=6, labels=true_labels)
     plt.show()
