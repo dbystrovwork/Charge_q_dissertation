@@ -118,6 +118,32 @@ def nested_dsbm_cycle(c1, c2, n_per_block, p, s_inner, s_outer, r, seed=None):
     return edges, labels
 
 
+def directed_erdos_renyi(n, p, seed=None):
+    """
+    Generate a directed Erdos-Renyi graph.
+
+    Each directed edge (i, j) with i != j is included independently
+    with probability p.
+
+    Args:
+        n: Number of nodes
+        p: Probability of each directed edge
+
+    Returns:
+        edges: List of (i, j) tuples
+        labels: None (no community structure)
+    """
+    rng = np.random.default_rng(seed)
+    edges = []
+
+    for i in range(n):
+        for j in range(n):
+            if i != j and rng.random() < p:
+                edges.append((i, j))
+
+    return edges, None
+
+
 CONFIG_PATH = Path(__file__).parent / "graph_config.json"
 
 _GENERATORS = {
@@ -125,6 +151,7 @@ _GENERATORS = {
     "dsbm_cycle_general": dsbm_cycle_general,
     "nested_dsbm_cycle": nested_dsbm_cycle,
     "directed_small_world": directed_small_world,
+    "directed_erdos_renyi": directed_erdos_renyi,
 }
 
 _LOADERS = {
@@ -166,7 +193,7 @@ def generate_graph(graph_type, seed=None, **overrides):
 
     if graph_type == "nested_dsbm_cycle":
         num_nodes = config["c1"] * config["c2"] * config["n_per_block"]
-    elif graph_type == "directed_small_world":
+    elif graph_type in ("directed_small_world", "directed_erdos_renyi"):
         num_nodes = config["n"]
     else:
         num_nodes = config["k"] * config["n_per_class"]

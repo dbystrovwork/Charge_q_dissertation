@@ -37,7 +37,7 @@ def plot_graph(edges, num_nodes, labels=None, node_sizes=None, ax=None):
         centers = {c: np.array([np.cos(a), np.sin(a)]) for c, a in zip(unique, angles)}
         rng = np.random.default_rng(42)
         init_pos = {
-            i: centers[labels[i]] + rng.normal(scale=0.01, size=2)
+            i: centers[labels[i]] + rng.normal(scale=0.1, size=2)
             for i in range(num_nodes)
         }
         pos = nx.spring_layout(G, pos=init_pos, seed=42, iterations=1)

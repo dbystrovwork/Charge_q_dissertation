@@ -32,7 +32,7 @@ def inverse_participation_ratio(vec):
     return np.sum(np.abs(vec) ** 4)
 
 
-GRAPH_TYPE = "dsbm_cycle"
+GRAPH_TYPE = "directed_erdos_renyi"
 
 
 def localization_experiment(
@@ -42,7 +42,7 @@ def localization_experiment(
     n_repeats=1,
     seed=42,
     plot=True,
-    plot_nmi=True,
+    plot_nmi=False,
 ):
     """
     Measure eigenvector localization (IPR) as a function of q.

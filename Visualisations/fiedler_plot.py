@@ -48,11 +48,11 @@ def plot_fiedler_graph(edges, num_nodes, q, labels=None):
     return ax
 
 
-GRAPH_TYPE = "dsbm_cycle"
+GRAPH_TYPE = "directed_erdos_renyi"
 
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_fiedler_graph(edges, num_nodes, q=0.05, labels=true_labels)
+    plot_fiedler_graph(edges, num_nodes, q=0.3)
     plt.tight_layout()
     plt.show()
