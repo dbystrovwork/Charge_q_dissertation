@@ -4,6 +4,7 @@ import numpy as np
 
 from .small_world import directed_small_world
 from .barabasi_albert import barabasi_albert, directed_barabasi_albert
+from .configuration_model import configuration_model
 from .cora_ml import load_cora_ml
 from .citeseer import load_citeseer
 from .c_elegans import load_c_elegans
@@ -155,6 +156,7 @@ _GENERATORS = {
     "directed_erdos_renyi": directed_erdos_renyi,
     "barabasi_albert": barabasi_albert,
     "directed_barabasi_albert": directed_barabasi_albert,
+    "configuration_model": configuration_model,
 }
 
 _LOADERS = {
@@ -197,7 +199,8 @@ def generate_graph(graph_type, seed=None, **overrides):
     if graph_type == "nested_dsbm_cycle":
         num_nodes = config["c1"] * config["c2"] * config["n_per_block"]
     elif graph_type in ("directed_small_world", "directed_erdos_renyi",
-                         "barabasi_albert", "directed_barabasi_albert"):
+                         "barabasi_albert", "directed_barabasi_albert",
+                         "configuration_model"):
         num_nodes = config["n"]
     else:
         num_nodes = config["k"] * config["n_per_class"]

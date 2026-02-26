@@ -39,5 +39,11 @@
     "directed_barabasi_albert": {
         "n": 200,
         "m": 3
+    },
+    "configuration_model": {
+        "n": 400,
+        "gamma": 2.5,
+        "k_min": 1,
+        "k_max": null
     }
 }
