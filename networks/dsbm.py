@@ -5,6 +5,7 @@ import numpy as np
 from .small_world import directed_small_world
 from .barabasi_albert import barabasi_albert, directed_barabasi_albert
 from .configuration_model import configuration_model
+from .sbm import sbm
 from .cora_ml import load_cora_ml
 from .citeseer import load_citeseer
 from .c_elegans import load_c_elegans
@@ -157,6 +158,7 @@ _GENERATORS = {
     "barabasi_albert": barabasi_albert,
     "directed_barabasi_albert": directed_barabasi_albert,
     "configuration_model": configuration_model,
+    "sbm": sbm,
 }
 
 _LOADERS = {
@@ -202,6 +204,8 @@ def generate_graph(graph_type, seed=None, **overrides):
                          "barabasi_albert", "directed_barabasi_albert",
                          "configuration_model"):
         num_nodes = config["n"]
+    elif graph_type == "sbm":
+        num_nodes = config["k"] * config["n_per_class"]
     else:
         num_nodes = config["k"] * config["n_per_class"]
 

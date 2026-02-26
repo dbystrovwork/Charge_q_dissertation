@@ -1,7 +1,7 @@
 {
     "dsbm_cycle": {
-        "k": 8,
-        "n_per_class": 100,
+        "k": 10,
+        "n_per_class": 60,
         "p": 0.3,
         "s": 0.1,
         "r": 0.05
@@ -45,5 +45,11 @@
         "gamma": 2.5,
         "k_min": 1,
         "k_max": null
+    },
+    "sbm": {
+        "k": 4,
+        "n_per_class": 100,
+        "p_in": 0.3,
+        "p_out": 0.05
     }
 }

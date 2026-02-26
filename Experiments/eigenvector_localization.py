@@ -32,7 +32,7 @@ def inverse_participation_ratio(vec):
     return np.sum(np.abs(vec) ** 4)
 
 
-GRAPH_TYPE = "dsbm_cycle"  
+GRAPH_TYPE = "dsbm_cycle_general"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 
 def localization_experiment(
