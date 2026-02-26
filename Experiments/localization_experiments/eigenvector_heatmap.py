@@ -25,7 +25,7 @@ def node_degrees(edges, num_nodes):
 
 def eigenvector_heatmap(
     graph_type="barabasi_albert",
-    k=100,
+    k=None,
     seed=42,
     normalized=False,
 ):
@@ -46,6 +46,9 @@ def eigenvector_heatmap(
         fig: The matplotlib Figure.
     """
     edges, labels, num_nodes = generate_graph(graph_type, seed=seed)
+
+    if k is None:
+        k = num_nodes - 1
 
     eigenvalues, eigenvectors = laplacian_eig(
         edges, num_nodes, k=k, normalized=normalized,
@@ -93,7 +96,7 @@ def eigenvector_heatmap(
     lap_label = "normalised" if normalized else "unnormalised"
     ax.set_title(
         f"Eigenvector localisation — {graph_type} "
-        f"({lap_label}, k={k-1}, N={num_nodes})"
+        f"({lap_label}, N={num_nodes})"
     )
 
     fig.colorbar(im, ax=ax, label=r"$|\psi_i(v)|$", shrink=0.8)
@@ -105,5 +108,5 @@ GRAPH_TYPE = "barabasi_albert"
 
 
 if __name__ == "__main__":
-    eigenvector_heatmap(graph_type=GRAPH_TYPE, k=399, seed=42)
+    eigenvector_heatmap(graph_type=GRAPH_TYPE, seed=42)
     plt.show()

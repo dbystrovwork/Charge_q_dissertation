@@ -26,7 +26,7 @@ def node_degrees(edges, num_nodes):
 
 def peak_degree_vs_eigenvalue(
     graph_type="barabasi_albert",
-    k=20,
+    k=None,
     seed=42,
     normalized=False,
 ):
@@ -45,6 +45,8 @@ def peak_degree_vs_eigenvalue(
     """
     edges, labels, num_nodes = generate_graph(graph_type, seed=seed)
 
+    if k is None:
+        k = num_nodes - 1
     eigenvalues, eigenvectors = laplacian_eig(
         edges, num_nodes, k=k, normalized=normalized,
     )
@@ -58,16 +60,19 @@ def peak_degree_vs_eigenvalue(
     peak_degrees = degrees[peak_nodes]
 
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.scatter(peak_degrees, eigenvalues, s=30, alpha=0.7, edgecolors="none")
+    ax.scatter(peak_degrees, eigenvalues, s=5, alpha=0.7, edgecolors="none")
+
+    # y = x reference line
+    max_val = max(peak_degrees.max(), eigenvalues.max())
+    ax.plot([0, max_val], [0, max_val], "k--", alpha=0.5, label="y = x")
 
     ax.set_xlabel("Degree of peak node")
     ax.set_ylabel(r"$\lambda$")
     lap_label = "normalised" if normalized else "unnormalised"
     ax.set_title(
         f"Peak-node degree vs eigenvalue — {graph_type} "
-        f"({lap_label}, k={k}, N={num_nodes})"
+        f"({lap_label}, N={num_nodes})"
     )
-    ax.grid(True)
 
     plt.tight_layout()
     return fig
@@ -77,5 +82,5 @@ GRAPH_TYPE = "barabasi_albert"
 
 
 if __name__ == "__main__":
-    peak_degree_vs_eigenvalue(graph_type=GRAPH_TYPE, k=300, seed=42)
+    peak_degree_vs_eigenvalue(graph_type=GRAPH_TYPE, seed=42)
     plt.show()
