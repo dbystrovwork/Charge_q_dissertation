@@ -12,17 +12,25 @@ from .c_elegans import load_c_elegans
 from .food_web import load_food_web
 
 
-def dsbm_cycle_general(k, n_per_class, p, fwd, bwd, r, seed=None):
+def dsbm_cycle(k, n_per_class, p, eta, seed=None):
     """
-    General Directed SBM with per-block forward/backward edge probabilities.
+    Directed Stochastic Block Model with cyclic structure.
+
+    Each pair of nodes (i, j) is connected with probability p.
+    The direction is determined by the matrix F of size KxK where:
+      - F(a, b) + F(b, a) = 1
+      - F(a, b) = 1 - eta  if (a + 1) mod K == b
+      - F(a, b) = 0.5      otherwise
+
+    For a pair of nodes (i, j) in communities a, b:
+      - With probability p * F(a, b), edge (i -> j) is added
+      - With probability p * F(b, a), edge (j -> i) is added
 
     Args:
         k: Number of communities
         n_per_class: Nodes per community
-        p: Within-community edge probability
-        fwd: List of length k. fwd[i] = prob of edges from block i to block (i+1) % k
-        bwd: List of length k. bwd[i] = prob of edges from block i to block (i-1) % k
-        r: Random noise edge probability
+        p: Edge probability between any pair of nodes
+        eta: Asymmetry parameter (0 = fully forward, 0.5 = undirected, 1 = fully backward)
 
     Returns:
         edges: List of (i, j) tuples
@@ -34,39 +42,24 @@ def dsbm_cycle_general(k, n_per_class, p, fwd, bwd, r, seed=None):
 
     labels = np.repeat(np.arange(k), n_per_class)
 
+    # Build F matrix
+    F = 0.5 * np.ones((k, k))
+    for a in range(k):
+        b = (a + 1) % k
+        F[a, b] = 1 - eta
+        F[b, a] = eta
+
     for i in range(num_nodes):
-        for j in range(num_nodes):
-            if i == j:
-                continue
-
-            ci, cj = labels[i], labels[j]
-
-            if ci == cj:
-                prob = p
-            elif cj == (ci + 1) % k:
-                prob = fwd[ci]
-            elif cj == (ci - 1) % k:
-                prob = bwd[ci]
-            else:
-                prob = r
-
-            if rng.random() < prob:
-                edges.append((i, j))
+        for j in range(i + 1, num_nodes):
+            if rng.random() < p:
+                ci, cj = labels[i], labels[j]
+                # Edge exists; determine direction(s) using F
+                if rng.random() < F[ci, cj]:
+                    edges.append((i, j))
+                else:
+                    edges.append((j, i))
 
     return edges, labels
-
-
-def dsbm_cycle(k, n_per_class, p, s, r, seed=None):
-    """
-    Directed SBM with uniform forward probability, backward = noise.
-
-    Wrapper around dsbm_cycle_general.
-    """
-    return dsbm_cycle_general(
-        k, n_per_class, p,
-        fwd=[s] * k, bwd=[r] * k,
-        r=r, seed=seed
-    )
 
 
 def nested_dsbm_cycle(c1, c2, n_per_block, p, s_inner, s_outer, r, seed=None):
@@ -151,7 +144,7 @@ CONFIG_PATH = Path(__file__).parent / "graph_config.json"
 
 _GENERATORS = {
     "dsbm_cycle": dsbm_cycle,
-    "dsbm_cycle_general": dsbm_cycle_general,
+    # "dsbm_cycle_general": dsbm_cycle_general,  # TODO: restore when reimplemented
     "nested_dsbm_cycle": nested_dsbm_cycle,
     "directed_small_world": directed_small_world,
     "directed_erdos_renyi": directed_erdos_renyi,
@@ -179,7 +172,7 @@ def generate_graph(graph_type, seed=None, **overrides):
     Generate or load a graph by type.
 
     Args:
-        graph_type: A generator name ("dsbm_cycle", "dsbm_cycle_general",
+        graph_type: A generator name ("dsbm_cycle",
             "nested_dsbm_cycle", "directed_small_world") or a real-world
             dataset name ("cora_ml", "citeseer", "c_elegans", "food_web").
         seed: Random seed (only used for generators, ignored for datasets)

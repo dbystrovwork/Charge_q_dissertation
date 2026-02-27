@@ -18,8 +18,8 @@ SEED = 42
 # === Select graph (labelled only) ===
 # Options: "dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle",
 #          "directed_small_world", "cora_ml", "citeseer"
-GRAPH = "nested_dsbm_cycle"
-Q = 0.3
+GRAPH = "dsbm_cycle"
+Q = 0.2
 EIGENVECTOR = 1  # 1-indexed
 
 if GRAPH in ("dsbm_cycle", "dsbm_cycle_general", "nested_dsbm_cycle", "directed_small_world"):

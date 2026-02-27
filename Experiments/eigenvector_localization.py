@@ -33,9 +33,6 @@ def inverse_participation_ratio(vec):
     return np.sum(np.abs(vec) ** 4)
 
 
-
-
-
 def _sweep_q(eig_fn, edges, num_nodes, true_labels, q_values, k, compute_nmi):
     """Run IPR and optional NMI sweep over q for a given eigendecomposition function."""
     K = len(np.unique(true_labels)) if compute_nmi else None
@@ -201,5 +198,5 @@ def localization_experiment(
 GRAPH_TYPE = "dsbm_cycle"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 if __name__ == "__main__":
-    localization_experiment(graph_type=GRAPH_TYPE, n_repeats=1, use_bethe_hessian=True)
+    localization_experiment(graph_type=GRAPH_TYPE, n_repeats=1, use_bethe_hessian=False)
 

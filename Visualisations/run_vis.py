@@ -11,7 +11,7 @@ from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 from spectral_vis import plot_eigenvalues_vs_q
 
 from networks.simple_cycles import directed_cycle, directed_cycle_flipped, nested_cycles, cycles_from_node
-from networks.dsbm import dsbm_cycle, dsbm_cycle_general, nested_dsbm_cycle, generate_graph
+from networks.dsbm import dsbm_cycle, nested_dsbm_cycle, generate_graph
 from networks.cora_ml import load_cora_ml
 from networks.citeseer import load_citeseer
 from networks.c_elegans import load_c_elegans

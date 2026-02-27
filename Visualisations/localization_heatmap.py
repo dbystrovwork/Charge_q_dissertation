@@ -10,6 +10,7 @@ plt.style.use("seaborn-v0_8-paper")
 
 from networks.dsbm import generate_graph
 from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from laplacians.bethe_hessian.non_backtracking import magnetic_non_backtracking_matrix
 
 
 def plot_localization_heatmap(edges, num_nodes, q, k, labels=None):
@@ -95,5 +96,5 @@ GRAPH_TYPE = "dsbm_cycle"
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_localization_heatmap(edges, num_nodes, q=0.3, k=6, labels=true_labels)
+    plot_localization_heatmap(edges, num_nodes, q=0.1, k=6, labels=true_labels)
     plt.show()
