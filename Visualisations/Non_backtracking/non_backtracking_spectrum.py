@@ -14,72 +14,70 @@ from laplacians.bethe_hessian.non_backtracking import (
 )
 
 
-def plot_non_backtracking_spectrum(graph_type="sbm", q=None, seed=42):
+def compute_spectrum(graph_type, q=None, seed=42):
     """
-    Plot all eigenvalues of the non-backtracking matrix in the complex plane
-    for an SBM graph.
+    Compute the non-backtracking (or magnetic NB) spectrum for a graph.
 
-    Informative eigenvalues (corresponding to communities) appear as real
-    eigenvalues outside the bulk circle of radius sqrt(mean degree).
-
-    Args:
-        graph_type: Graph generator name.
-        q: If not None, use the magnetic non-backtracking matrix with this charge.
-        seed: Random seed.
+    Returns:
+        eigenvalues, bulk_radius
     """
     edges, labels, num_nodes = generate_graph(graph_type, seed=seed)
 
     if q is not None:
-        B, directed_edges = magnetic_non_backtracking_matrix(edges, num_nodes, q)
+        B, _ = magnetic_non_backtracking_matrix(edges, num_nodes, q)
     else:
-        B, directed_edges = non_backtracking_matrix(edges, num_nodes)
+        B, _ = non_backtracking_matrix(edges, num_nodes)
 
-    # Dense eig for full spectrum (sparse eigs cannot compute all eigenvalues)
     eigenvalues = np.linalg.eig(B.toarray())[0]
 
-    # Mean degree from the undirected adjacency
     degrees = np.zeros(num_nodes)
     for i, j in edges:
         degrees[i] += 1
         degrees[j] += 1
-    mean_deg = degrees.mean()
-    bulk_radius = np.sqrt(mean_deg)
+    bulk_radius = np.sqrt(degrees.mean())
 
-    K = len(np.unique(labels))
+    return eigenvalues, bulk_radius
 
-    fig, ax = plt.subplots(figsize=(8, 8))
 
-    # Bulk circle
-    theta = np.linspace(0, 2 * np.pi, 200)
-    ax.plot(bulk_radius * np.cos(theta), bulk_radius * np.sin(theta),
-            'k--', linewidth=1, label=f"r = √d̄ = {bulk_radius:.2f}")
+graphs = ["dcsbm_cycle", "c_elegans"]
+qs = [0.2, 0.2]
 
-    # Colour eigenvalues: real outliers vs bulk
-    real_part = eigenvalues.real
-    imag_part = eigenvalues.imag
-    modulus = np.abs(eigenvalues)
+if __name__ == "__main__":
+    n_graphs = len(graphs)
+    fig, axes = plt.subplots(1, n_graphs, figsize=(5 * n_graphs, 5))
+    if n_graphs == 1:
+        axes = [axes]
 
-    outlier_mask = modulus > bulk_radius + 0.1
-    bulk_mask = ~outlier_mask
+    for ax, graph_type, q in zip(axes, graphs, qs):
+        eigenvalues, bulk_radius = compute_spectrum(graph_type, q=q, seed=42)
 
-    ax.scatter(real_part[bulk_mask], imag_part[bulk_mask],
-               s=8, alpha=0.4, c="steelblue", label="Bulk")
-    ax.scatter(real_part[outlier_mask], imag_part[outlier_mask],
-               s=40, c="red", zorder=5, label=f"Outliers ({outlier_mask.sum()})")
+        # Bulk circle
+        theta = np.linspace(0, 2 * np.pi, 200)
+        ax.plot(bulk_radius * np.cos(theta), bulk_radius * np.sin(theta),
+                'k--', linewidth=1)
 
-    ax.set_xlabel("Re(λ)")
-    ax.set_ylabel("Im(λ)")
-    operator = f"Magnetic NB (q={q})" if q is not None else "Non-backtracking"
-    ax.set_title(f"{operator} spectrum — {graph_type} (K={K}, n={num_nodes})")
-    ax.set_aspect("equal")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+        real_part = eigenvalues.real
+        imag_part = eigenvalues.imag
+        modulus = np.abs(eigenvalues)
+
+        outlier_mask = modulus > bulk_radius + 0.1
+        bulk_mask = ~outlier_mask
+
+        ax.scatter(real_part[bulk_mask], imag_part[bulk_mask],
+                   s=8, alpha=0.4, c="steelblue")
+        ax.scatter(real_part[outlier_mask], imag_part[outlier_mask],
+                   s=8, c="red", zorder=5)
+
+        # Square limits clipped to bulk + small margin
+        lim = bulk_radius * 1.5
+        ax.set_xlim(-lim, lim)
+        ax.set_ylim(-lim, lim)
+        ax.set_aspect("equal")
+        ax.set_xlabel("Re(λ)")
+        ax.set_ylabel("Im(λ)")
+        ax.grid(True, alpha=0.3)
+        ax.text(0.5, 0.97, f"{graph_type}\nq = {q}",
+                transform=ax.transAxes, ha="center", va="top", fontsize=10)
 
     plt.tight_layout()
     plt.show()
-
-    return eigenvalues
-
-
-if __name__ == "__main__":
-    plot_non_backtracking_spectrum(graph_type="c_elegans", q=0.2, seed=42)
