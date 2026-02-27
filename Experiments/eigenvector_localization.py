@@ -101,7 +101,7 @@ def localization_experiment(
     n_repeats=1,
     seed=42,
     plot=True,
-    plot_nmi=True,
+    plot_nmi=False,
     use_bethe_hessian=True,
 ):
     """
@@ -198,5 +198,5 @@ def localization_experiment(
 GRAPH_TYPE = "dsbm_cycle"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 if __name__ == "__main__":
-    localization_experiment(graph_type=GRAPH_TYPE, n_repeats=1, use_bethe_hessian=False)
+    localization_experiment(graph_type=GRAPH_TYPE, n_repeats=1, plot_nmi=True, use_bethe_hessian=False)
 

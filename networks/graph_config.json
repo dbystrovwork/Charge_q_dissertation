@@ -1,8 +1,8 @@
 {
     "dsbm_cycle": {
-        "k": 2,
-        "n_per_class": 10,
-        "p": 0.2,
+        "k": 8,
+        "n_per_class": 100,
+        "p": 0.04,
         "eta": 0.1
     },
     "dsbm_cycle_general": {
@@ -50,5 +50,15 @@
         "n_per_class": 100,
         "p_in": 0.02,
         "p_out": 0.01
+    },
+    "directed_barbell": {
+        "n_clique": 50
+    },
+    "dcsbm_cycle": {
+        "k": 3,
+        "n_per_class": 200,
+        "gamma_fwd": 5.0,
+        "gamma_bwd": 1.0,
+        "gamma_intra": 10.0
     }
 }

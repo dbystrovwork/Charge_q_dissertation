@@ -63,5 +63,10 @@ def magnetic_laplacian_eig(edges, num_nodes, q, k, normalized=False):
         eigenvectors: Array of shape (num_nodes, k)
     """
     L = magnetic_laplacian(edges, num_nodes, q, normalized)
+
+    if num_nodes <= 512:
+        vals, vecs = np.linalg.eigh(L.toarray())
+        return vals[:k], vecs[:, :k]
+
     eigenvalues, eigenvectors = eigsh(L, k=k, which='SM')
     return eigenvalues, eigenvectors

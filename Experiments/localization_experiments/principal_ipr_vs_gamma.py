@@ -85,38 +85,40 @@ def principal_ipr_vs_gamma(
         mean_ipr.append(np.mean(ipr_values))
         std_ipr.append(np.std(ipr_values))
 
-    mean_ipr = np.array(mean_ipr)
-    std_ipr = np.array(std_ipr)
+    return gammas, np.array(mean_ipr)
+
+
+MARKERS = ["o", "s", "^", "D", "v", "p", "h", "*"]
+ns = [int(1e4), int(1e5), int(1e6), int(1e7)]
+
+
+if __name__ == "__main__":
+    use_adjacency = True
+    n_instances = 3
+    vec_label = "Principal (Adjacency)" if use_adjacency else "Fiedler (Laplacian)"
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(gammas, mean_ipr, "b-", linewidth=1.5, marker="o", markersize=4)
 
-    if n_instances > 1:
-        ax.fill_between(
-            gammas,
-            mean_ipr - std_ipr,
-            mean_ipr + std_ipr,
-            alpha=0.3,
+    for i, n in enumerate(ns):
+        gammas, mean_ipr = principal_ipr_vs_gamma(
+            n=n, n_gamma=20, n_instances=n_instances, use_adjacency=use_adjacency,
+        )
+        marker = MARKERS[i % len(MARKERS)]
+        ax.plot(
+            gammas, mean_ipr, linestyle="-", linewidth=1.5,
+            marker=marker, markersize=6,
+            label=rf"$N = 10^{{{int(np.log10(n))}}}$",
         )
 
-    ax.axhline(1 / n, color="red", linestyle="--", label="1/N (delocalized)")
-    ax.axhline(1, color="green", linestyle="--", label="1 (fully localized)")
-
-    vec_label = "Principal (Adjacency)" if use_adjacency else "Fiedler (Laplacian)"
     ax.set_xlabel(r"$\gamma$ (power-law exponent)")
     ax.set_ylabel(f"{vec_label} IPR")
     ax.set_title(
         f"{vec_label} IPR vs γ — Configuration Model\n"
-        f"(N={n}, {n_instances} instances)"
+        f"({n_instances} instances per point)"
     )
     ax.legend()
     ax.grid(True, alpha=0.3)
     ax.set_yscale("log")
 
     plt.tight_layout()
-    return fig
-
-
-if __name__ == "__main__":
-    principal_ipr_vs_gamma(n=int(1e4), n_gamma=20, n_instances=10, use_adjacency=False)
     plt.show()

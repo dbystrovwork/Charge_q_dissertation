@@ -48,6 +48,11 @@ def laplacian_eig(edges, num_nodes, k, normalized=False):
         eigenvectors: Array of shape (num_nodes, k)
     """
     L = laplacian(edges, num_nodes, normalized)
+
+    if num_nodes <= 512:
+        vals, vecs = np.linalg.eigh(L.toarray())
+        return vals[:k], vecs[:, :k]
+
     eigenvalues, eigenvectors = eigsh(L, k=k, which='SM')
     idx = np.argsort(eigenvalues)
     return eigenvalues[idx], eigenvectors[:, idx]

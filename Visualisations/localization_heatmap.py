@@ -91,10 +91,10 @@ def plot_localization_heatmap(edges, num_nodes, q, k, labels=None):
     return fig
 
 
-GRAPH_TYPE = "dsbm_cycle"
+GRAPH_TYPE = "dsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_localization_heatmap(edges, num_nodes, q=0.1, k=6, labels=true_labels)
+    plot_localization_heatmap(edges, num_nodes, q=0.0, k=6, labels=true_labels)
     plt.show()

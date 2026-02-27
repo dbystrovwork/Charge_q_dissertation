@@ -10,6 +10,7 @@ from .cora_ml import load_cora_ml
 from .citeseer import load_citeseer
 from .c_elegans import load_c_elegans
 from .food_web import load_food_web
+from .localization_examples.barbell import directed_barbell
 
 
 def dsbm_cycle(k, n_per_class, p, eta, seed=None):
@@ -58,6 +59,55 @@ def dsbm_cycle(k, n_per_class, p, eta, seed=None):
                     edges.append((i, j))
                 else:
                     edges.append((j, i))
+
+    return edges, labels
+
+
+def dcsbm_cycle(k, n_per_class, gamma_fwd, gamma_bwd, gamma_intra, seed=None):
+    """
+    Degree-Correlated Directed SBM with cyclic cluster arrangement.
+
+    Communities are arranged in a cycle. For nodes u in community a
+    and v in community b, a directed edge u -> v exists independently
+    with probability Gamma(a, b) / n, where n = k * n_per_class.
+
+    The Gamma matrix is defined as:
+      - Gamma(a, b) = gamma_fwd   if (a+1) mod K == b  (forward in cycle)
+      - Gamma(a, b) = gamma_bwd   if (b+1) mod K == a  (backward in cycle)
+      - Gamma(a, a) = gamma_intra (within-community)
+      - Gamma(a, b) = 0           otherwise
+
+    Args:
+        k: Number of communities
+        n_per_class: Nodes per community
+        gamma_fwd: Forward connection strength (Gamma for a -> a+1)
+        gamma_bwd: Backward connection strength (Gamma for a -> a-1)
+        gamma_intra: Within-community connection strength
+        seed: Random seed
+
+    Returns:
+        edges: List of (i, j) tuples
+        labels: Array of community labels
+    """
+    rng = np.random.default_rng(seed)
+    num_nodes = k * n_per_class
+    labels = np.repeat(np.arange(k), n_per_class)
+
+    # Build Gamma matrix
+    Gamma = np.zeros((k, k))
+    for a in range(k):
+        Gamma[a, a] = gamma_intra
+        Gamma[a, (a + 1) % k] = gamma_fwd
+        Gamma[(a + 1) % k, a] = gamma_bwd
+
+    edges = []
+    for i in range(num_nodes):
+        for j in range(num_nodes):
+            if i == j:
+                continue
+            prob = Gamma[labels[i], labels[j]] / num_nodes
+            if rng.random() < prob:
+                edges.append((i, j))
 
     return edges, labels
 
@@ -144,6 +194,7 @@ CONFIG_PATH = Path(__file__).parent / "graph_config.json"
 
 _GENERATORS = {
     "dsbm_cycle": dsbm_cycle,
+    "dcsbm_cycle": dcsbm_cycle,
     # "dsbm_cycle_general": dsbm_cycle_general,  # TODO: restore when reimplemented
     "nested_dsbm_cycle": nested_dsbm_cycle,
     "directed_small_world": directed_small_world,
@@ -152,6 +203,7 @@ _GENERATORS = {
     "directed_barabasi_albert": directed_barabasi_albert,
     "configuration_model": configuration_model,
     "sbm": sbm,
+    "directed_barbell": directed_barbell,
 }
 
 _LOADERS = {
@@ -193,6 +245,8 @@ def generate_graph(graph_type, seed=None, **overrides):
 
     if graph_type == "nested_dsbm_cycle":
         num_nodes = config["c1"] * config["c2"] * config["n_per_block"]
+    elif graph_type == "directed_barbell":
+        num_nodes = 2 * config["n_clique"]
     elif graph_type in ("directed_small_world", "directed_erdos_renyi",
                          "barabasi_albert", "directed_barabasi_albert",
                          "configuration_model"):

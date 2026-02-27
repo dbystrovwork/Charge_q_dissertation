@@ -71,6 +71,11 @@ def magnetic_bethe_hessian_eig(edges, num_nodes, q, k, r=None):
         eigenvectors: Array of shape (num_nodes, k)
     """
     H = magnetic_bethe_hessian(edges, num_nodes, q, r)
+
+    if num_nodes <= 512:
+        vals, vecs = np.linalg.eigh(H.toarray())
+        return vals[:k], vecs[:, :k]
+
     eigenvalues, eigenvectors = eigsh(H, k=k, which='SA')
     idx = np.argsort(eigenvalues)
     return eigenvalues[idx], eigenvectors[:, idx]

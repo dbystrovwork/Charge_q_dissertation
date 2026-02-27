@@ -82,4 +82,4 @@ def plot_non_backtracking_spectrum(graph_type="sbm", q=None, seed=42):
 
 
 if __name__ == "__main__":
-    plot_non_backtracking_spectrum(graph_type="dsbm_cycle", q=0.2, seed=42)
+    plot_non_backtracking_spectrum(graph_type="c_elegans", q=0.2, seed=42)

@@ -73,7 +73,7 @@ def plot_graph(edges, num_nodes, labels=None, node_sizes=None, ax=None):
     return ax
 
 
-GRAPH_TYPE = "dsbm_cycle"
+GRAPH_TYPE = "directed_barbell"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 
 if __name__ == "__main__":
