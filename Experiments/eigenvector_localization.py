@@ -195,8 +195,8 @@ def localization_experiment(
     ml_result = results["Magnetic Laplacian"]
     return q_values, ml_result[0], ml_result[1], ml_result[2], ml_result[3]
 
-GRAPH_TYPE = "dsbm_cycle"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+GRAPH_TYPE = "dcsbm_cycle"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 if __name__ == "__main__":
-    localization_experiment(graph_type=GRAPH_TYPE, n_repeats=1, plot_nmi=True, use_bethe_hessian=False)
+    localization_experiment(graph_type=GRAPH_TYPE, n_repeats=1, plot_nmi=False, use_bethe_hessian=False)
 

@@ -10,7 +10,10 @@ plt.style.use("seaborn-v0_8-paper")
 
 from networks.dsbm import generate_graph
 from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
-from laplacians.bethe_hessian.non_backtracking import magnetic_non_backtracking_matrix
+from laplacians.bethe_hessian.non_backtracking import (
+    magnetic_non_backtracking_eig,
+    non_backtracking_eig,
+)
 
 
 def plot_localization_heatmap(edges, num_nodes, q, k, labels=None):
@@ -91,10 +94,78 @@ def plot_localization_heatmap(edges, num_nodes, q, k, labels=None):
     return fig
 
 
-GRAPH_TYPE = "dsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+def plot_nb_localization_heatmap(edges, num_nodes, k, q=None):
+    """
+    Plot a heatmap of non-backtracking eigenvector localization |ψ_i(e)|²
+    on each directed edge.
+
+    Edges are sorted by (source, target) so that edges leaving the same
+    node are grouped together.
+
+    Args:
+        edges: List of (i, j) tuples for directed edges.
+        num_nodes: Number of nodes in the graph.
+        k: Number of eigenvectors to compute.
+        q: If given, use the magnetic non-backtracking matrix B_q.
+            If None, use the standard non-backtracking matrix.
+
+    Returns:
+        The matplotlib Figure.
+    """
+    if q is not None:
+        eigenvalues, eigenvectors, directed_edges = magnetic_non_backtracking_eig(
+            edges, num_nodes, q, k=k
+        )
+    else:
+        eigenvalues, eigenvectors, directed_edges = non_backtracking_eig(
+            edges, num_nodes, k=k
+        )
+
+    # |ψ_i(e)|² matrix: (2m, k)
+    prob = np.abs(eigenvectors) ** 2
+
+    # Sort edges by (source, target) for visual grouping
+    sort_idx = np.argsort(
+        [src * num_nodes + dst for src, dst in directed_edges],
+        kind="stable",
+    )
+    prob = prob[sort_idx]
+    sorted_edges = [directed_edges[i] for i in sort_idx]
+
+    # Find boundaries between source-node groups for visual separation
+    sources = np.array([e[0] for e in sorted_edges])
+    boundaries = np.where(np.diff(sources) != 0)[0] + 0.5
+
+    num_edges = len(directed_edges)
+    fig, ax = plt.subplots(figsize=(max(k * 0.8, 6), 8))
+
+    im = ax.imshow(prob, aspect="auto", cmap="viridis", interpolation="nearest")
+    ax.set_xlabel("Eigenvector index")
+    ax.set_xticks(range(k))
+    ax.set_xticklabels(
+        [f"ψ{i+1}\n|λ|={np.abs(eigenvalues[i]):.2f}" for i in range(k)],
+        fontsize=7,
+    )
+    ax.set_ylabel(f"Directed edge  ({num_edges} edges)")
+    title = "NB  |ψ(e)|²"
+    if q is not None:
+        title += f"   (q = {q:.3f})"
+    ax.set_title(title)
+    fig.colorbar(im, ax=ax, label="|ψ(e)|²", shrink=0.6)
+
+    # Draw faint lines between source-node groups
+    for b in boundaries:
+        ax.axhline(b, color="white", linewidth=0.3, alpha=0.5)
+
+    plt.tight_layout()
+    return fig
+
+
+GRAPH_TYPE = "dcsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_localization_heatmap(edges, num_nodes, q=0.0, k=6, labels=true_labels)
+    plot_localization_heatmap(edges, num_nodes, q=0.25, k=6)
+    plot_nb_localization_heatmap(edges, num_nodes, k=6, q=0.25)
     plt.show()
