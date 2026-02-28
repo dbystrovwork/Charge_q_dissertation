@@ -5,17 +5,6 @@ from scipy.sparse.linalg import eigsh
 
 def magnetic_bethe_hessian(edges, num_nodes, q, r=None):
     """
-    Compute the magnetic Bethe-Hessian matrix using the Ihara formula.
-
-    The Ihara determinant formula gives:
-        ζ_G(u)^{-1} = (1 - u²)^{m-n} · det(I - u·T_q + u²·(D_s - I))
-
-    Setting r = 1/u and multiplying through by r² yields the Bethe-Hessian:
-        H_q(r) = (r² - 1)·I  -  r·T_q  +  D_s
-
-    where T_q is the magnetic adjacency matrix (Hermitian) constructed
-    from the directed edge list and the charge parameter q.
-
     Args:
         edges: List of (i, j) tuples for directed edges i -> j
         num_nodes: Number of nodes
