@@ -28,6 +28,31 @@ def magnetic_adjacency(edges, num_nodes, q):
     return csr_matrix(H, dtype=complex)
 
 
+def magnetic_adjacency_eig(edges, num_nodes, q, k):
+    """
+    Compute the k largest eigenvalues/eigenvectors of the magnetic adjacency matrix.
+
+    Args:
+        edges: List of (i, j) tuples for directed edges i -> j
+        num_nodes: Number of nodes
+        q: Magnetic potential parameter
+        k: Number of eigenvalues to compute
+
+    Returns:
+        eigenvalues: Array of k largest eigenvalues (real)
+        eigenvectors: Array of shape (num_nodes, k)
+    """
+    H = magnetic_adjacency(edges, num_nodes, q)
+
+    if num_nodes <= 512:
+        vals, vecs = np.linalg.eigh(H.toarray())
+        return vals[-k:][::-1], vecs[:, -k:][:, ::-1]
+
+    eigenvalues, eigenvectors = eigsh(H, k=k, which='LM')
+    idx = np.argsort(eigenvalues)[::-1]
+    return eigenvalues[idx], eigenvectors[:, idx]
+
+
 def magnetic_laplacian(edges, num_nodes, q, normalized=False):
     """
     Compute the magnetic Laplacian for a directed graph.

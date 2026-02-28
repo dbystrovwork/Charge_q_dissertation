@@ -10,7 +10,10 @@ plt.style.use("seaborn-v0_8-paper")
 from sklearn.metrics import normalized_mutual_info_score
 
 from networks.dsbm import generate_graph
-from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from laplacians.magnetic_laplacian.mag_lap_ops import (
+    magnetic_laplacian_eig,
+    magnetic_adjacency_eig,
+)
 from laplacians.magnetic_laplacian.spectral_clustering import spectral_clustering
 from laplacians.bethe_hessian.magnetic_bethe_hessian import magnetic_bethe_hessian_eig
 
@@ -31,6 +34,27 @@ def inverse_participation_ratio(vec):
         Scalar IPR value.
     """
     return np.sum(np.abs(vec) ** 4)
+
+
+# ── operator registry ───────────────────────────────────────────────
+def _ml_eig(edges, num_nodes, q, k):
+    return magnetic_laplacian_eig(edges, num_nodes, q, k=k, normalized=True)
+
+
+def _bh_eig(edges, num_nodes, q, k):
+    return magnetic_bethe_hessian_eig(edges, num_nodes, q, k=k)
+
+
+def _ma_eig(edges, num_nodes, q, k):
+    return magnetic_adjacency_eig(edges, num_nodes, q, k=k)
+
+
+OPERATOR_REGISTRY = {
+    "Magnetic Laplacian": _ml_eig,
+    "Bethe-Hessian": _bh_eig,
+    "Magnetic adjacency": _ma_eig,
+}
+# ────────────────────────────────────────────────────────────────────
 
 
 def _sweep_q(eig_fn, edges, num_nodes, true_labels, q_values, k, compute_nmi):
@@ -96,57 +120,49 @@ def _plot_row(axes, q_values, mean_ipr, std_ipr, mean_nmi, std_nmi,
 
 def localization_experiment(
     graph_type=None,
+    operators=None,
     k=6,
     q_values=None,
     n_repeats=1,
     seed=42,
     plot=True,
     plot_nmi=False,
-    use_bethe_hessian=True,
 ):
     """
     Measure eigenvector localization (IPR) as a function of q.
 
-    For each q value, computes the first k eigenvectors of the magnetic
-    Laplacian and plots the IPR of each eigenvector. When use_bethe_hessian
-    is True, the magnetic Bethe-Hessian results are plotted in a second row
-    underneath the magnetic Laplacian results.
+    For each q value and each operator, computes the first k eigenvectors
+    and plots the IPR. Each operator is plotted in its own row.
 
     Args:
         graph_type: Generator or dataset name (e.g. "dsbm_cycle", "cora_ml").
+        operators: List of operator names to compare. Available:
+            "Magnetic Laplacian", "Bethe-Hessian", "Hermitian adjacency".
+            Defaults to ["Magnetic Laplacian"].
         k: Number of eigenvectors to consider.
         q_values: Array of charge parameter values to sweep.
         n_repeats: Number of graph realisations to average over.
         seed: Random seed.
         plot: Whether to show the plot.
         plot_nmi: If True, also plot spectral clustering NMI (requires labels).
-        use_bethe_hessian: If True, also plot magnetic Bethe-Hessian results
-            in a second row beneath the magnetic Laplacian.
 
     Returns:
-        q_values, mean_ipr, std_ipr, mean_nmi, std_nmi
+        results: Dict mapping operator name to (mean_ipr, std_ipr, mean_nmi, std_nmi).
     """
+    if operators is None:
+        operators = ["Magnetic Laplacian"]
     if q_values is None:
         q_values = np.linspace(0, 0.5, 50)
 
-    def _ml_eig(edges, num_nodes, q, k):
-        return magnetic_laplacian_eig(edges, num_nodes, q, k=k, normalized=True)
-
-    def _bh_eig(edges, num_nodes, q, k):
-        return magnetic_bethe_hessian_eig(edges, num_nodes, q, k=k)
-
-    operators = [("Magnetic Laplacian", _ml_eig)]
-    if use_bethe_hessian:
-        operators.append(("Bethe-Hessian", _bh_eig))
+    eig_fns = [(name, OPERATOR_REGISTRY[name]) for name in operators]
 
     rng = np.random.default_rng(seed)
 
-    # results[operator_name] -> (mean_ipr, std_ipr, mean_nmi, std_nmi)
     results = {}
     compute_nmi = False
     num_nodes = None
 
-    for op_name, eig_fn in operators:
+    for op_name, eig_fn in eig_fns:
         all_ipr = []
         all_nmi = []
 
@@ -183,7 +199,7 @@ def localization_experiment(
                                  figsize=(8 * n_cols, 5 * n_rows),
                                  squeeze=False)
 
-        for row, (op_name, _) in enumerate(operators):
+        for row, op_name in enumerate(operators):
             mean_ipr, std_ipr, mean_nmi, std_nmi = results[op_name]
             _plot_row(axes[row], q_values, mean_ipr, std_ipr,
                       mean_nmi, std_nmi, k, n_repeats, num_nodes,
@@ -192,11 +208,17 @@ def localization_experiment(
         plt.tight_layout()
         plt.show()
 
-    ml_result = results["Magnetic Laplacian"]
-    return q_values, ml_result[0], ml_result[1], ml_result[2], ml_result[3]
+    return results
 
-GRAPH_TYPE = "dcsbm_cycle"  # "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+
+GRAPH_TYPE = "dcsbm_cycle"
+
+OPERATORS = ["Magnetic adjacency", "Bethe-Hessian"]
 
 if __name__ == "__main__":
-    localization_experiment(graph_type=GRAPH_TYPE, n_repeats=1, plot_nmi=False, use_bethe_hessian=False)
-
+    localization_experiment(
+        graph_type=GRAPH_TYPE,
+        operators=OPERATORS,
+        n_repeats=1,
+        plot_nmi=True,
+    )
