@@ -60,5 +60,10 @@
         "gamma_fwd": 5.0,
         "gamma_bwd": 2.0,
         "gamma_intra": 5.0
+    },
+    "two_cycles": {
+        "k1": 3,
+        "k2": 4,
+        "p": 10
     }
 }

@@ -11,6 +11,7 @@ from .citeseer import load_citeseer
 from .c_elegans import load_c_elegans
 from .food_web import load_food_web
 from .localization_examples.barbell import directed_barbell
+from .localization_examples.two_cycles import two_cycles
 
 
 def dsbm_cycle(k, n_per_class, p, eta, seed=None):
@@ -204,6 +205,7 @@ _GENERATORS = {
     "configuration_model": configuration_model,
     "sbm": sbm,
     "directed_barbell": directed_barbell,
+    "two_cycles": two_cycles,
 }
 
 _LOADERS = {
@@ -247,6 +249,8 @@ def generate_graph(graph_type, seed=None, **overrides):
         num_nodes = config["c1"] * config["c2"] * config["n_per_block"]
     elif graph_type == "directed_barbell":
         num_nodes = 2 * config["n_clique"]
+    elif graph_type == "two_cycles":
+        num_nodes = config["k1"] + config["k2"] + config.get("p", 1) - 1
     elif graph_type in ("directed_small_world", "directed_erdos_renyi",
                          "barabasi_albert", "directed_barabasi_albert",
                          "configuration_model"):

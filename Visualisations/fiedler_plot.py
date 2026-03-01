@@ -11,6 +11,7 @@ plt.style.use("seaborn-v0_8-paper")
 
 from networks.dsbm import generate_graph
 from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
+from graph_plot import plot_graph
 
 
 def node_degrees(edges, num_nodes):
@@ -24,40 +25,40 @@ def node_degrees(edges, num_nodes):
     return np.array(A.sum(axis=1)).flatten().astype(int)
 
 
-# def plot_fiedler_graph(edges, num_nodes, q, labels=None):
-#     """
-#     Plot a graph with node sizes proportional to the magnitude of the
-#     Fiedler vector (second smallest eigenvector) of the magnetic Laplacian.
+def plot_fiedler_graph(edges, num_nodes, q, labels=None):
+    """
+    Plot a graph with node sizes proportional to the magnitude of the
+    Fiedler vector (second smallest eigenvector) of the magnetic Laplacian.
 
-#     Args:
-#         edges: List of (i, j) tuples for directed edges.
-#         num_nodes: Number of nodes in the graph.
-#         q: Magnetic potential parameter.
-#         labels: Optional array of node labels for colouring.
+    Args:
+        edges: List of (i, j) tuples for directed edges.
+        num_nodes: Number of nodes in the graph.
+        q: Magnetic potential parameter.
+        labels: Optional array of node labels for colouring.
 
-#     Returns:
-#         The matplotlib Axes used.
-#     """
-#     eigenvalues, eigenvectors = magnetic_laplacian_eig(
-#         edges, num_nodes, q, k=2, normalized=True
-#     )
+    Returns:
+        The matplotlib Axes used.
+    """
+    eigenvalues, eigenvectors = magnetic_laplacian_eig(
+        edges, num_nodes, q, k=2, normalized=True
+    )
 
-#     fiedler = eigenvectors[:, 1]
-#     magnitudes = np.abs(fiedler)
+    fiedler = eigenvectors[:, 1]
+    magnitudes = np.abs(fiedler)
 
-#     # Scale to reasonable node sizes
-#     min_size, max_size = 10, 300
-#     if magnitudes.max() > magnitudes.min():
-#         node_sizes = min_size + (max_size - min_size) * (
-#             (magnitudes - magnitudes.min()) / (magnitudes.max() - magnitudes.min())
-#         )
-#     else:
-#         node_sizes = np.full(num_nodes, (min_size + max_size) / 2)
+    # Scale to reasonable node sizes
+    min_size, max_size = 10, 300
+    if magnitudes.max() > magnitudes.min():
+        node_sizes = min_size + (max_size - min_size) * (
+            (magnitudes - magnitudes.min()) / (magnitudes.max() - magnitudes.min())
+        )
+    else:
+        node_sizes = np.full(num_nodes, (min_size + max_size) / 2)
 
-#     # ax = plot_graph(edges, num_nodes, labels=labels, node_sizes=node_sizes)
-#     ax.set_title(f"Fiedler vector magnitude (q={q:.3f}, N={num_nodes})")
+    ax = plot_graph(edges, num_nodes, labels=labels, node_sizes=node_sizes)
+    ax.set_title(f"Fiedler vector magnitude (q={q:.3f}, N={num_nodes})")
 
-#     return ax
+    return ax
 
 
 def plot_fiedler_heatmap(edges, num_nodes, q_values):
@@ -101,10 +102,10 @@ def plot_fiedler_heatmap(edges, num_nodes, q_values):
     return fig
 
 
-GRAPH_TYPE = "dcsbm_cycle"
+GRAPH_TYPE = "two_cycles"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 qs = [0.1, 0.15, 0.2, 0.25, 0.3]
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_fiedler_heatmap(edges, num_nodes, qs)
+    plot_fiedler_graph(edges, num_nodes, q=1/4, labels=true_labels)
     plt.show()
