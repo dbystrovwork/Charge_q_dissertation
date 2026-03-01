@@ -1,18 +1,17 @@
 import numpy as np
 
 
-def add_hub(edges, degree, seed=None):
+def add_hub(edges, degree, direction="inward", seed=None):
     """
-    Extend a directed graph by adding a hub node that receives edges
-    from existing nodes.
-
-    A new node is created with index max(existing nodes) + 1. Then
-    `degree` existing nodes are sampled uniformly at random and a
-    directed edge from each sampled node to the hub is added.
+    Extend a directed graph by adding a hub node.
 
     Args:
         edges: List of (i, j) tuples for existing directed edges
-        degree: Number of edges pointing to the new hub node
+        degree: Number of edges connecting to the hub
+        direction: Edge direction relative to hub:
+            - "inward": edges point TO the hub (node -> hub)
+            - "outward": edges point FROM the hub (hub -> node)
+            - "mixed": half inward, half outward
         seed: Random seed for reproducibility
 
     Returns:
@@ -27,11 +26,23 @@ def add_hub(edges, degree, seed=None):
         existing_nodes.add(j)
 
     hub_id = max(existing_nodes) + 1
-
-    sources = rng.choice(list(existing_nodes), size=degree, replace=False)
+    nodes = rng.choice(list(existing_nodes), size=degree, replace=False)
 
     new_edges = list(edges)
-    for src in sources:
-        new_edges.append((int(src), hub_id))
+
+    if direction == "inward":
+        for n in nodes:
+            new_edges.append((int(n), hub_id))
+    elif direction == "outward":
+        for n in nodes:
+            new_edges.append((hub_id, int(n)))
+    elif direction == "mixed":
+        half = degree // 2
+        for n in nodes[:half]:
+            new_edges.append((int(n), hub_id))
+        for n in nodes[half:]:
+            new_edges.append((hub_id, int(n)))
+    else:
+        raise ValueError(f"Unknown direction: {direction}")
 
     return new_edges, hub_id

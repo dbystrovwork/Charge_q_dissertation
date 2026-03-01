@@ -247,6 +247,6 @@ if __name__ == "__main__":
         graph_type=GRAPH_TYPE,
         operators=OPERATORS,
         n_repeats=1,
-        metric="Accuracy",
+        metric=None,
         k=5
     )

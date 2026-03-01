@@ -24,7 +24,8 @@ def ipr_vs_hub_degree(
     q=0.25,
     multiples=np.arange(1, 11),
     n_instances=10,
-    use_effective= False,
+    use_effective=False,
+    hub_direction="inward",
     seed=42,
 ):
     """
@@ -36,6 +37,8 @@ def ipr_vs_hub_degree(
         q: Magnetic potential parameter
         multiples: Array of multipliers applied to d_bar for hub degree
         n_instances: Number of graph instances to average over
+        use_effective: If True, plot 1/IPR instead of IPR
+        hub_direction: "inward", "outward", or "mixed"
         seed: Random seed for reproducibility
     """
     rng = np.random.default_rng(seed)
@@ -62,7 +65,7 @@ def ipr_vs_hub_degree(
             hub_degree = int(m * d_bar)
             hub_degree = min(hub_degree, num_nodes)
 
-            hub_edges, hub_id = add_hub(edges, hub_degree, seed=instance_seed + int(m))
+            hub_edges, hub_id = add_hub(edges, hub_degree, direction=hub_direction, seed=instance_seed + int(m))
             n_total = hub_id + 1
 
             # --- Magnetic adjacency: largest eigenvector ---
@@ -131,7 +134,7 @@ def ipr_vs_hub_degree(
     ax.set_xlabel(r"Hub degree multiple $m$ ($d_{\mathrm{hub}} = m \cdot \bar{d}$)")
     ax.set_title(
         f"{metric_label} vs hub degree\n"
-        f"{graph_type}, q={q}, $\\bar{{d}}$={d_bar:.1f}, n_instances={n_instances}"
+        f"{graph_type}, q={q}, hub={hub_direction}, $\\bar{{d}}$={d_bar:.1f}, n={n_instances}"
     )
     ax.legend()
     ax.grid(True, alpha=0.3)
@@ -143,6 +146,7 @@ def ipr_vs_hub_degree(
 
 GRAPH_TYPE = "dcsbm_cycle"
 Q = 0.2
+HUB_DIRECTION = "outward"  # "inward", "outward", or "mixed"
 
 Ms = np.arange(1, 11)
 
@@ -152,6 +156,7 @@ if __name__ == "__main__":
         q=Q,
         multiples=Ms,
         use_effective=True,
-        n_instances=10,
+        hub_direction=HUB_DIRECTION,
+        n_instances=1,
     )
     plt.show()
