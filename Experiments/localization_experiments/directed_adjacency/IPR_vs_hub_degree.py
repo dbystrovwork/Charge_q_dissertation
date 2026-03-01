@@ -152,6 +152,6 @@ if __name__ == "__main__":
         q=Q,
         multiples=Ms,
         use_effective=True,
-        n_instances=1,
+        n_instances=10,
     )
     plt.show()

@@ -24,20 +24,20 @@ def node_degrees(edges, num_nodes):
 
 
 def eigenvector_heatmap(
-    graph_type="barabasi_albert",
+    graph_types,
     k=None,
     seed=42,
     normalized=False,
 ):
     """
-    Heatmap of eigenvector magnitude, with nodes sorted by degree.
+    Side-by-side heatmaps of eigenvector magnitude, with nodes sorted by degree.
 
-    X-axis = node index sorted by degree (low to high).
+    X-axis = node index sorted by degree (high to low).
     Y-axis = eigenvalue index (ascending eigenvalue, skipping lambda_0).
     Colour = |psi_i(v)|.
 
     Args:
-        graph_type: Any symmetric graph type registered in generate_graph.
+        graph_types: List of graph type strings registered in generate_graph.
         k: Number of eigenvectors to compute (including the trivial one).
         seed: Random seed.
         normalized: Whether to use the normalized Laplacian.
@@ -45,23 +45,10 @@ def eigenvector_heatmap(
     Returns:
         fig: The matplotlib Figure.
     """
-    edges, labels, num_nodes = generate_graph(graph_type, seed=seed)
-
-    if k is None:
-        k = num_nodes - 1
-
-    eigenvalues, eigenvectors = laplacian_eig(
-        edges, num_nodes, k=k, normalized=normalized,
-    )
-
-    # Skip the trivial zero eigenvalue
-    eigenvalues = eigenvalues[1:]
-    eigenvectors = eigenvectors[:, 1:]
-
-    degrees = node_degrees(edges, num_nodes)
-    degree_order = np.argsort(-degrees)
-
-    mag = np.abs(eigenvectors[degree_order, :]).T
+    n = len(graph_types)
+    fig, axes = plt.subplots(1, n, figsize=(8 * n, 7))
+    if n == 1:
+        axes = [axes]
 
     # Custom colormap: white -> yellow -> orange -> red -> black
     cmap = LinearSegmentedColormap.from_list(
@@ -69,44 +56,63 @@ def eigenvector_heatmap(
         ["white", "yellow", "orange", "red", "black"],
     )
 
-    X = np.arange(len(degree_order))
-    Y = np.arange(len(eigenvalues))
-
-    fig, ax = plt.subplots(figsize=(10, 7))
-    im = ax.contourf(
-        X, Y, mag,
-        levels=50,
-        cmap=cmap,
-    )
-
-    # Node index tick labels
-    n_xticks = min(10, len(degree_order))
-    xtick_pos = np.linspace(0, len(degree_order) - 1, n_xticks, dtype=int)
-    ax.set_xticks(xtick_pos)
-    ax.set_xticklabels(xtick_pos)
-
-    # Eigenvalue index tick labels
-    n_yticks = min(10, len(eigenvalues))
-    ytick_pos = np.linspace(0, len(eigenvalues) - 1, n_yticks, dtype=int)
-    ax.set_yticks(ytick_pos)
-    ax.set_yticklabels(ytick_pos + 1)
-
-    ax.set_xlabel("Node index (sorted by degree)")
-    ax.set_ylabel("Eigenvalue index")
     lap_label = "normalised" if normalized else "unnormalised"
-    ax.set_title(
-        f"Eigenvector localisation — {graph_type} "
-        f"({lap_label}, N={num_nodes})"
-    )
 
-    fig.colorbar(im, ax=ax, label=r"$|\psi_i(v)|$", shrink=0.8)
+    for ax, graph_type in zip(axes, graph_types):
+        edges, labels, num_nodes = generate_graph(graph_type, seed=seed)
+
+        ki = k if k is not None else num_nodes - 1
+
+        eigenvalues, eigenvectors = laplacian_eig(
+            edges, num_nodes, k=ki, normalized=normalized,
+        )
+
+        # Skip the trivial zero eigenvalue
+        eigenvalues = eigenvalues[1:]
+        eigenvectors = eigenvectors[:, 1:]
+
+        degrees = node_degrees(edges, num_nodes)
+        degree_order = np.argsort(-degrees)
+
+        mag = np.abs(eigenvectors[degree_order, :]).T
+
+        X = np.arange(len(degree_order))
+        Y = np.arange(len(eigenvalues))
+
+        im = ax.contourf(
+            X, Y, mag,
+            levels=50,
+            cmap=cmap,
+        )
+
+        # Node index tick labels
+        n_xticks = min(10, len(degree_order))
+        xtick_pos = np.linspace(0, len(degree_order) - 1, n_xticks, dtype=int)
+        ax.set_xticks(xtick_pos)
+        ax.set_xticklabels(xtick_pos)
+
+        # Eigenvalue index tick labels
+        n_yticks = min(10, len(eigenvalues))
+        ytick_pos = np.linspace(0, len(eigenvalues) - 1, n_yticks, dtype=int)
+        ax.set_yticks(ytick_pos)
+        ax.set_yticklabels(ytick_pos + 1)
+
+        ax.set_xlabel("Node index (sorted by degree)")
+        ax.set_ylabel("Eigenvalue index")
+        ax.set_title(
+            f"Eigenvector localisation — {graph_type}\n"
+            f"({lap_label}, N={num_nodes})"
+        )
+
+        fig.colorbar(im, ax=ax, label=r"$|\psi_i(v)|$", shrink=0.8)
+
     plt.tight_layout()
     return fig
 
 
-GRAPH_TYPE = "barabasi_albert"
+graphs = ["barabasi_albert", "directed_erdos_renyi"]
 
 
 if __name__ == "__main__":
-    eigenvector_heatmap(graph_type=GRAPH_TYPE, seed=42)
+    eigenvector_heatmap(graph_types=graphs, seed=42)
     plt.show()

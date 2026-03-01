@@ -55,10 +55,10 @@
         "n_clique": 50
     },
     "dcsbm_cycle": {
-        "k": 2,
-        "n_per_class": 1000,
-        "gamma_fwd": 2.0,
-        "gamma_bwd": 1.0,
-        "gamma_intra": 4.0
+        "k": 5,
+        "n_per_class": 100,
+        "gamma_fwd": 5.0,
+        "gamma_bwd": 2.0,
+        "gamma_intra": 5.0
     }
 }

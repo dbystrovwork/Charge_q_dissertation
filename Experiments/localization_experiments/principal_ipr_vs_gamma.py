@@ -89,12 +89,12 @@ def principal_ipr_vs_gamma(
 
 
 MARKERS = ["o", "s", "^", "D", "v", "p", "h", "*"]
-ns = [int(1e4), int(1e5), int(1e6), int(1e7)]
+ns = [int(1e3), int(1e4), int(1e5), int(1e6)]
 
 
 if __name__ == "__main__":
     use_adjacency = True
-    n_instances = 3
+    n_instances = 5
     vec_label = "Principal (Adjacency)" if use_adjacency else "Fiedler (Laplacian)"
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -110,11 +110,12 @@ if __name__ == "__main__":
             label=rf"$N = 10^{{{int(np.log10(n))}}}$",
         )
 
+    ax.axvline(2.7, color="black", linestyle=":", label=r"$\gamma = 2.7$")
+
     ax.set_xlabel(r"$\gamma$ (power-law exponent)")
     ax.set_ylabel(f"{vec_label} IPR")
     ax.set_title(
         f"{vec_label} IPR vs γ — Configuration Model\n"
-        f"({n_instances} instances per point)"
     )
     ax.legend()
     ax.grid(True, alpha=0.3)
