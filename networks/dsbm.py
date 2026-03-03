@@ -10,6 +10,7 @@ from .cora_ml import load_cora_ml
 from .citeseer import load_citeseer
 from .c_elegans import load_c_elegans
 from .food_web import load_food_web
+from .ca_hepth import load_ca_hepth
 from .localization_examples.barbell import directed_barbell
 
 
@@ -211,6 +212,7 @@ _LOADERS = {
     "citeseer": load_citeseer,
     "c_elegans": load_c_elegans,
     "food_web": load_food_web,
+    "ca_hepth": load_ca_hepth,
 }
 
 
