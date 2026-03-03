@@ -1,9 +1,9 @@
 {
     "dsbm_cycle": {
-        "k": 2,
-        "n_per_class": 1000,
+        "k": 5,
+        "n_per_class": 30,
         "p": 0.04,
-        "eta": 0.1
+        "eta": 0.2
     },
     "dsbm_cycle_general": {
         "k": 5,
@@ -56,14 +56,14 @@
     },
     "dcsbm_cycle": {
         "k": 5,
-        "n_per_class": 100,
-        "gamma_fwd": 5.0,
+        "n_per_class": 200,
+        "gamma_fwd": 4.0,
         "gamma_bwd": 2.0,
-        "gamma_intra": 5.0
+        "gamma_intra": 4.0
     },
     "two_cycles": {
-        "k1": 3,
-        "k2": 4,
-        "p": 10
+        "k1": 7,
+        "k2": 11,
+        "p": 15
     }
 }

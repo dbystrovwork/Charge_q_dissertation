@@ -39,8 +39,8 @@ def compute_spectrum(graph_type, q=None, seed=42):
     return eigenvalues, bulk_radius
 
 
-graphs = ["dcsbm_cycle", "c_elegans"]
-qs = [0.2, 0.2]
+graphs = ["dsbm_cycle"]
+qs = [0.2]
 
 if __name__ == "__main__":
     n_graphs = len(graphs)
@@ -60,7 +60,8 @@ if __name__ == "__main__":
         imag_part = eigenvalues.imag
         modulus = np.abs(eigenvalues)
 
-        outlier_mask = modulus > bulk_radius + 0.1
+        outlier_mask = modulus > bulk_radius 
+        print("n_outliers =", outlier_mask.sum())
         bulk_mask = ~outlier_mask
 
         ax.scatter(real_part[bulk_mask], imag_part[bulk_mask],
