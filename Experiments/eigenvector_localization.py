@@ -238,15 +238,15 @@ def localization_experiment(
     return results
 
 
-GRAPH_TYPE = "dcsbm_cycle"
+GRAPH_TYPE = "two_cycles"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
-OPERATORS = ["Magnetic adjacency", "Bethe-Hessian"]
+OPERATORS = ["Magnetic Laplacian"]  # ["Magnetic Laplacian"]
 
 if __name__ == "__main__":
     localization_experiment(
         graph_type=GRAPH_TYPE,
         operators=OPERATORS,
         n_repeats=1,
-        metric="Accuracy",
+        metric=None,
         k=5
     )
