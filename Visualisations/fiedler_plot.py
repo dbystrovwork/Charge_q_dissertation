@@ -108,31 +108,32 @@ def plot_fiedler_heatmap(edges, num_nodes, q_values, eig_index=0):
     return fig
 
 
-def plot_two_cycles(k1, k2, p, q, eig_index=1, figsize=(10, 5), save_path=None):
+def plot_eigenvector_graph(graph_type, q, eig_index=1, figsize=(8, 6),
+                           title=None, save_path=None, seed=42, **overrides):
     """
-    Publication-ready plot of two_cycles graph with eigenvector magnitude.
+    Plot any graph with node colour/size proportional to eigenvector magnitude.
 
     Args:
-        k1: Length of first cycle
-        k2: Length of second cycle
-        p: Length of path connecting cycles
+        graph_type: Any key from generate_graph (e.g. "two_cycles", "cycle_tail", "dcsbm_cycle")
         q: Magnetic potential parameter
-        eig_index: Eigenvector index to visualize
+        eig_index: Eigenvector index (0 = smallest, 1 = Fiedler, etc.)
         figsize: Figure size tuple
+        title: Custom title (auto-generated if None)
         save_path: If provided, save figure to this path
+        seed: Random seed for graph generation and layout
+        **overrides: Override any graph config parameter
 
     Returns:
         fig, ax
     """
-    from networks.localization_examples.two_cycles import two_cycles
-
-    edges, labels = two_cycles(k1, k2, p)
-    num_nodes = k1 + k2 + (p - 1)
+    edges, labels, num_nodes = generate_graph(graph_type, seed=seed, **overrides)
 
     _, eigenvectors = magnetic_laplacian_eig(
         edges, num_nodes, q, k=eig_index + 1, normalized=True
     )
-    magnitudes = np.abs(eigenvectors[:, eig_index])
+    vec = eigenvectors[:, eig_index]
+    magnitudes = np.abs(vec)
+    phases = np.angle(vec)  # in [-pi, pi]
     mag_norm = (magnitudes - magnitudes.min()) / (magnitudes.max() - magnitudes.min() + 1e-10)
 
     # Build networkx graph
@@ -140,50 +141,27 @@ def plot_two_cycles(k1, k2, p, q, eig_index=1, figsize=(10, 5), save_path=None):
     G.add_nodes_from(range(num_nodes))
     G.add_edges_from(edges)
 
-    # Layout: cycles as circles, path as line
-    r1 = 1.0
-    r2 = 1.0 * (k2 / k1) ** 0.5  # scale radius by relative size
-    gap = r1 + r2 + 2.5 + 0.3 * (p - 1)  # adjust gap for path length
+    # Layout
+    pos = nx.spring_layout(G, seed=seed, k=1.5 / np.sqrt(num_nodes), iterations=100)
 
-    pos = {}
-
-    # Cycle 1: clockwise from right (so exit node faces the path)
-    for i in range(k1):
-        angle = -2 * np.pi * i / k1
-        pos[i] = (r1 * np.cos(angle), r1 * np.sin(angle))
-
-    # Cycle 2: clockwise from left (so entry node faces the path)
-    for i in range(k2):
-        angle = np.pi - 2 * np.pi * i / k2
-        pos[k1 + i] = (gap + r2 * np.cos(angle), r2 * np.sin(angle))
-
-    # Path nodes: horizontal line between cycles
-    if p > 1:
-        x_start = pos[k1 - 1][0] + 0.4
-        x_end = pos[k1][0] - 0.4
-        for i in range(p - 1):
-            t = (i + 1) / p
-            pos[k1 + k2 + i] = (x_start + t * (x_end - x_start), 0)
-
-    # Color scheme
-    cmap = LinearSegmentedColormap.from_list(
+    # Color scheme for magnitude
+    mag_cmap = LinearSegmentedColormap.from_list(
         "eigenvector", ["#f7f7f7", "#fddbc7", "#f4a582", "#d6604d", "#b2182b"]
     )
-    node_colors = [cmap(m) for m in mag_norm]
+    node_colors = [mag_cmap(m) for m in mag_norm]
 
     # Node sizes scaled by magnitude
     min_size, max_size = 50, 250
     node_sizes = min_size + (max_size - min_size) * mag_norm
 
-    # Edge colors by type
+    # Edge colors by community label
     edge_colors = []
+    palette = ["#4393c3", "#2166ac", "#666666", "#5aae61", "#762a83"]
     for i, j in edges:
-        if labels[i] == 0 and labels[j] == 0:
-            edge_colors.append("#4393c3")  # blue for cycle 1
-        elif labels[i] == 1 and labels[j] == 1:
-            edge_colors.append("#2166ac")  # darker blue for cycle 2
+        if labels is not None and labels[i] == labels[j]:
+            edge_colors.append(palette[int(labels[i]) % len(palette)])
         else:
-            edge_colors.append("#666666")  # gray for path
+            edge_colors.append("#999999")
 
     # Create figure
     fig, ax = plt.subplots(figsize=figsize)
@@ -194,35 +172,59 @@ def plot_two_cycles(k1, k2, p, q, eig_index=1, figsize=(10, 5), save_path=None):
     nx.draw_networkx_edges(
         G, pos, ax=ax,
         edge_color=edge_colors,
-        width=1.5,
-        alpha=0.8,
+        width=1.2,
+        alpha=0.6,
         arrows=True,
-        arrowsize=15,
+        arrowsize=12,
         arrowstyle="-|>",
         connectionstyle="arc3,rad=0.1",
         node_size=node_sizes,
     )
 
     # Draw nodes
-    nodes = nx.draw_networkx_nodes(
+    nx.draw_networkx_nodes(
         G, pos, ax=ax,
         node_color=node_colors,
         node_size=node_sizes,
         edgecolors="#333333",
-        linewidths=1.2,
+        linewidths=1.0,
     )
 
-    # Colorbar
-    sm = ScalarMappable(cmap=cmap, norm=Normalize(vmin=magnitudes.min(), vmax=magnitudes.max()))
-    sm.set_array([])
-    cbar = fig.colorbar(sm, ax=ax, shrink=0.6, aspect=20, pad=0.02)
-    cbar.set_label(rf"$|\psi_{{{eig_index}}}(v)|$", fontsize=12)
+    # Phase labels next to each node
+    phase_cmap = plt.cm.hsv
+    phase_norm = Normalize(vmin=-np.pi, vmax=np.pi)
+    for node_id in range(num_nodes):
+        x, y = pos[node_id]
+        phase = phases[node_id]
+        phase_color = phase_cmap(phase_norm(phase))
+        ax.annotate(
+            rf"${phase / np.pi:+.1f}\pi$",
+            xy=(x, y),
+            xytext=(6, 6),
+            textcoords="offset points",
+            fontsize=5,
+            color=phase_color,
+            fontweight="bold",
+        )
+
+    # Magnitude colorbar
+    sm_mag = ScalarMappable(cmap=mag_cmap, norm=Normalize(vmin=magnitudes.min(), vmax=magnitudes.max()))
+    sm_mag.set_array([])
+    cbar_mag = fig.colorbar(sm_mag, ax=ax, shrink=0.5, aspect=20, pad=0.02)
+    cbar_mag.set_label(rf"$|\psi_{{{eig_index}}}(v)|$", fontsize=11)
+
+    # Phase colorbar
+    sm_phase = ScalarMappable(cmap=phase_cmap, norm=phase_norm)
+    sm_phase.set_array([])
+    cbar_phase = fig.colorbar(sm_phase, ax=ax, shrink=0.5, aspect=20, pad=0.06)
+    cbar_phase.set_label(rf"$\arg(\psi_{{{eig_index}}}(v))$", fontsize=11)
+    cbar_phase.set_ticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
+    cbar_phase.set_ticklabels([r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"])
 
     # Title
-    ax.set_title(
-        rf"Two cycles ($k_1={k1}$, $k_2={k2}$, $p={p}$) — $q={q:.2f}$, eigenvector {eig_index}",
-        fontsize=13, pad=10
-    )
+    if title is None:
+        title = rf"{graph_type} — $q={q:.2f}$, eigenvector {eig_index}, $N={num_nodes}$"
+    ax.set_title(title, fontsize=13, pad=10)
 
     plt.tight_layout()
 
@@ -233,8 +235,6 @@ def plot_two_cycles(k1, k2, p, q, eig_index=1, figsize=(10, 5), save_path=None):
     return fig, ax
 
 
-GRAPH_TYPE = "two_cycles"
-
 if __name__ == "__main__":
-    fig, ax = plot_two_cycles(k1=7, k2=11, p=10, q=1/7, eig_index=3)
+    fig, ax = plot_eigenvector_graph("cycle_tail", q=1/10, eig_index=1, k=10, p=3)
     plt.show()

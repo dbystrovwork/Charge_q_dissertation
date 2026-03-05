@@ -46,9 +46,9 @@
         "k_max": null
     },
     "sbm": {
-        "k": 2,
+        "k": 5,
         "n_per_class": 100,
-        "p_in": 0.02,
+        "p_in": 0.1,
         "p_out": 0.01
     },
     "directed_barbell": {
@@ -65,5 +65,9 @@
         "k1": 7,
         "k2": 11,
         "p": 15
+    },
+    "cycle_tail": {
+        "k": 10,
+        "p": 5
     }
 }

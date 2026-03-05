@@ -39,8 +39,8 @@ def compute_spectrum(graph_type, q=None, seed=42):
     return eigenvalues, bulk_radius
 
 
-graphs = ["dsbm_cycle"]
-qs = [0.2]
+graphs = ["sbm"]
+qs = [None]
 
 if __name__ == "__main__":
     n_graphs = len(graphs)
