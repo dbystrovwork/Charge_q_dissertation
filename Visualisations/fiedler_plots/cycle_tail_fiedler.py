@@ -47,7 +47,8 @@ def cycle_tail_layout(k, p):
 
 
 def plot_cycle_tail_fiedler(k=10, p=5, q=0.25, eig_index=1,
-                            ax=None, title=None, seed=42):
+                            ax=None, title=None, seed=42, mag_vmax=None,
+                            colorbar=True):
     """
     Fiedler-style eigenvector plot for the cycle-tail graph with
     a custom layout: cycle as a circle, tail extending rightward.
@@ -66,9 +67,9 @@ def plot_cycle_tail_fiedler(k=10, p=5, q=0.25, eig_index=1,
     magnitudes = np.abs(vec)
     phases = np.angle(vec)
 
-    mag_norm = (magnitudes - magnitudes.min()) / (
-        magnitudes.max() - magnitudes.min() + 1e-10
-    )
+    if mag_vmax is None:
+        mag_vmax = magnitudes.max()
+    mag_norm = magnitudes / (mag_vmax + 1e-10)
 
     # Layout
     pos = cycle_tail_layout(k, p)
@@ -137,14 +138,16 @@ def plot_cycle_tail_fiedler(k=10, p=5, q=0.25, eig_index=1,
         )
 
     # Magnitude colorbar
-    sm_mag = ScalarMappable(
-        cmap=mag_cmap,
-        norm=Normalize(vmin=magnitudes.min(), vmax=magnitudes.max()),
-    )
-    sm_mag.set_array([])
-    fig = ax.get_figure()
-    cbar_mag = fig.colorbar(sm_mag, ax=ax, shrink=0.5, aspect=20, pad=0.02)
-    cbar_mag.set_label(rf"$|\psi_{{{eig_index}}}(v)|$", fontsize=11)
+    if colorbar:
+        sm_mag = ScalarMappable(
+            cmap=mag_cmap,
+            norm=Normalize(vmin=0, vmax=mag_vmax),
+        )
+        sm_mag.set_array([])
+        fig = ax.get_figure()
+        cbar_mag = fig.colorbar(sm_mag, ax=ax, orientation="horizontal",
+                                shrink=0.5, aspect=30, pad=0.08)
+        cbar_mag.set_label(rf"$|\psi_{{{eig_index}}}(v)|$", fontsize=11)
 
     if title is None:
         title = (
@@ -162,9 +165,29 @@ qs = [1/4, 1/6]
 
 if __name__ == "__main__":
     n = len(ks)
-    fig, axes = plt.subplots(1, n, figsize=(10 * n, 6), squeeze=False)
+    eig_index = 0
+
+    # Pre-compute global max magnitude across all panels
+    global_max = 0
     for i in range(n):
-        plot_cycle_tail_fiedler(k=ks[i], p=ps[i], q=qs[i], eig_index=1,
-                                ax=axes[0, i])
-    plt.tight_layout()
+        edges, _, num_nodes = generate_graph("cycle_tail", seed=42, k=ks[i], p=ps[i])
+        _, vecs = magnetic_laplacian_eig(edges, num_nodes, qs[i], k=eig_index + 1, normalized=True)
+        global_max = max(global_max, np.abs(vecs[:, eig_index]).max())
+
+    fig, axes = plt.subplots(1, n, figsize=(10 * n, 3.5), squeeze=False)
+    for i in range(n):
+        plot_cycle_tail_fiedler(k=ks[i], p=ps[i], q=qs[i], eig_index=eig_index,
+                                ax=axes[0, i], mag_vmax=global_max, colorbar=False)
+
+    # Single shared colorbar underneath both plots
+    mag_cmap = LinearSegmentedColormap.from_list(
+        "eigenvector", ["#f7f7f7", "#fddbc7", "#f4a582", "#d6604d", "#b2182b"]
+    )
+    sm = ScalarMappable(cmap=mag_cmap, norm=Normalize(vmin=0, vmax=global_max))
+    sm.set_array([])
+
+    fig.subplots_adjust(bottom=0.22)
+    cbar_ax = fig.add_axes([0.25, 0.15, 0.5, 0.03])  # [left, bottom, width, height]
+    fig.colorbar(sm, cax=cbar_ax, orientation="horizontal",
+                 label=rf"$|\psi_{{{eig_index}}}(v)|$")
     plt.show()

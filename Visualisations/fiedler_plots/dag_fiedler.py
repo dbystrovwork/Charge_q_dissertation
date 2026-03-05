@@ -13,66 +13,43 @@ from networks.dsbm import generate_graph
 from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 
 
-def two_cycles_layout(k1, k2, p):
+def dag_layout(num_layers, n_per_layer):
     """
-    Custom layout for the two-cycles graph.
+    Custom layout for the layered DAG.
 
-    C1 (nodes [0, k1)): unit circle on the left, with the junction
-    node k1-1 at theta=0 (rightmost point, facing the path).
-
-    C2 (nodes [k1, k1+k2)): unit circle on the right, with the
-    junction node k1 at theta=pi (leftmost point, facing the path).
-
-    Path nodes are evenly spaced along y=0 between the two junction
-    nodes.
+    Layer 0 (top row) -> layer 1 -> ... -> layer num_layers-1 (bottom).
+    Within each layer, nodes are spread horizontally and centred.
 
     Returns:
         pos: dict mapping node index -> (x, y)
     """
     pos = {}
-    radius = 1.0
-    gap = max(p * 0.6, 1.0)  # space between circle edges for the path
+    h_spacing = 1.0
+    v_spacing = 1.5
 
-    # C1 centred at x=0. Junction node k1-1 at theta=0 (x=radius).
-    # Cycle traversed CCW: node i at theta = (k1-1-i) * 2pi/k1
-    for i in range(k1):
-        theta = (k1 - 1 - i) * 2 * np.pi / k1
-        pos[i] = (radius * np.cos(theta), radius * np.sin(theta))
-
-    # C2 centred at x = 2*radius + gap. Junction node k1 at theta=pi
-    # (leftmost point). Cycle traversed CCW: node k1+i at
-    # theta = pi - i * 2pi/k2
-    cx2 = 2 * radius + gap
-    for i in range(k2):
-        theta = np.pi - i * 2 * np.pi / k2
-        pos[k1 + i] = (cx2 + radius * np.cos(theta), radius * np.sin(theta))
-
-    # Path nodes between the two junction nodes along y=0
-    # Junction of C1: pos[k1-1] = (radius, 0)
-    # Junction of C2: pos[k1]   = (cx2 - radius, 0)
-    x_left = radius
-    x_right = cx2 - radius
-    path_start = k1 + k2
-    num_path_nodes = p - 1  # p edges means p-1 interior nodes
-    for j in range(num_path_nodes):
-        t = (j + 1) / p
-        pos[path_start + j] = (x_left + t * (x_right - x_left), 0.0)
+    for layer in range(num_layers):
+        y = -layer * v_spacing
+        x_offset = -(n_per_layer - 1) * h_spacing / 2
+        for j in range(n_per_layer):
+            node = layer * n_per_layer + j
+            pos[node] = (x_offset + j * h_spacing, y)
 
     return pos
 
 
-def plot_two_cycles_fiedler(k1=7, k2=11, p=15, q=0.25, eig_index=1,
-                            ax=None, title=None, seed=42, mag_vmax=None,
-                            colorbar=True):
+def plot_dag_fiedler(num_layers=5, n_per_layer=40, p=0.05, q=0.25,
+                     eig_index=1, ax=None, title=None, seed=42, mag_vmax=None,
+                     colorbar=True):
     """
-    Fiedler-style eigenvector plot for the two-cycles graph with
-    a custom layout: two circles connected by a horizontal path.
+    Fiedler-style eigenvector plot for the random DAG with
+    a layered top-to-bottom layout.
 
     Node colour = eigenvector magnitude.
     Phase annotation on each node.
     """
     edges, labels, num_nodes = generate_graph(
-        "two_cycles", seed=seed, k1=k1, k2=k2, p=p
+        "random_dag", seed=seed, num_layers=num_layers,
+        n_per_layer=n_per_layer, p=p
     )
 
     _, eigenvectors = magnetic_laplacian_eig(
@@ -87,7 +64,7 @@ def plot_two_cycles_fiedler(k1=7, k2=11, p=15, q=0.25, eig_index=1,
     mag_norm = magnitudes / (mag_vmax + 1e-10)
 
     # Layout
-    pos = two_cycles_layout(k1, k2, p)
+    pos = dag_layout(num_layers, n_per_layer)
 
     # Colourmap for magnitude
     mag_cmap = LinearSegmentedColormap.from_list(
@@ -100,14 +77,14 @@ def plot_two_cycles_fiedler(k1=7, k2=11, p=15, q=0.25, eig_index=1,
     node_sizes = min_size + (max_size - min_size) * mag_norm
 
     if ax is None:
-        _, ax = plt.subplots(figsize=(14, 6))
+        _, ax = plt.subplots(figsize=(12, 8))
     ax.set_aspect("equal")
     ax.axis("off")
 
     # Add margin so nodes at the boundary aren't clipped
     xs = [pos[n][0] for n in pos]
     ys = [pos[n][1] for n in pos]
-    margin = 0.3
+    margin = 0.5
     ax.set_xlim(min(xs) - margin, max(xs) + margin)
     ax.set_ylim(min(ys) - margin, max(ys) + margin)
 
@@ -121,9 +98,9 @@ def plot_two_cycles_fiedler(k1=7, k2=11, p=15, q=0.25, eig_index=1,
             arrowprops=dict(
                 arrowstyle="-|>",
                 color="#666666",
-                lw=1.2,
-                connectionstyle="arc3,rad=0.08",
-                shrinkA=6, shrinkB=6,
+                lw=0.6,
+                alpha=0.3,
+                shrinkA=4, shrinkB=4,
             ),
         )
 
@@ -139,6 +116,19 @@ def plot_two_cycles_fiedler(k1=7, k2=11, p=15, q=0.25, eig_index=1,
             zorder=3,
         )
 
+    # Phase annotations (plain black text)
+    for node_id in range(num_nodes):
+        x, y = pos[node_id]
+        phase = phases[node_id]
+        ax.annotate(
+            rf"${phase / np.pi:+.2f}\pi$",
+            xy=(x, y),
+            xytext=(6, 8),
+            textcoords="offset points",
+            fontsize=5,
+            color="black",
+        )
+
     # Magnitude colorbar
     if colorbar:
         sm_mag = ScalarMappable(
@@ -147,51 +137,53 @@ def plot_two_cycles_fiedler(k1=7, k2=11, p=15, q=0.25, eig_index=1,
         )
         sm_mag.set_array([])
         fig = ax.get_figure()
-        cbar_mag = fig.colorbar(sm_mag, ax=ax, orientation="horizontal",
-                                shrink=0.5, aspect=30, pad=0.08)
+        cbar_mag = fig.colorbar(sm_mag, ax=ax, shrink=0.5, aspect=20, pad=0.02)
         cbar_mag.set_label(rf"$|\psi_{{{eig_index}}}(v)|$", fontsize=11)
 
     if title is None:
         title = (
-            rf"Two cycles — $q={q:.2f}$, eigenvector {eig_index}, "
-            rf"$k_1={k1}$, $k_2={k2}$, $p={p}$"
+            rf"Random DAG — $q={q:.2f}$, eigenvector {eig_index}, "
+            rf"layers$={num_layers}$, $n/\mathrm{{layer}}={n_per_layer}$, $p={p}$"
         )
-    ax.set_title(title, fontsize=10, pad=6)
+    ax.set_title(title, fontsize=13, pad=10)
 
     return ax
 
 
-k1s = [6]
-k2s = [10]
-ps = [5]
-qs = [0.13]
+num_layerss = [3]
+n_per_layers = [3]
+ps = [1]
+qs = [0.2]
 
 if __name__ == "__main__":
-    n = len(k1s)
+    n = len(num_layerss)
     eig_index = 0
 
     # Pre-compute global max magnitude across all panels
     global_max = 0
     for i in range(n):
-        edges, _, num_nodes = generate_graph("two_cycles", seed=42, k1=k1s[i], k2=k2s[i], p=ps[i])
+        edges, _, num_nodes = generate_graph(
+            "random_dag", seed=42, num_layers=num_layerss[i],
+            n_per_layer=n_per_layers[i], p=ps[i]
+        )
         _, vecs = magnetic_laplacian_eig(edges, num_nodes, qs[i], k=eig_index + 1, normalized=True)
         global_max = max(global_max, np.abs(vecs[:, eig_index]).max())
 
-    fig, axes = plt.subplots(1, n, figsize=(14 * n, 3.5), squeeze=False)
+    fig, axes = plt.subplots(1, n, figsize=(12 * n, 8), squeeze=False)
     for i in range(n):
-        plot_two_cycles_fiedler(k1=k1s[i], k2=k2s[i], p=ps[i], q=qs[i],
-                                eig_index=eig_index, ax=axes[0, i], mag_vmax=global_max,
-                                colorbar=False)
+        plot_dag_fiedler(
+            num_layers=num_layerss[i], n_per_layer=n_per_layers[i],
+            p=ps[i], q=qs[i], eig_index=eig_index, ax=axes[0, i],
+            mag_vmax=global_max, colorbar=False
+        )
 
-    # Single shared colorbar underneath both plots
+    # Single shared colorbar
     mag_cmap = LinearSegmentedColormap.from_list(
         "eigenvector", ["#f7f7f7", "#fddbc7", "#f4a582", "#d6604d", "#b2182b"]
     )
     sm = ScalarMappable(cmap=mag_cmap, norm=Normalize(vmin=0, vmax=global_max))
     sm.set_array([])
-
-    fig.subplots_adjust(bottom=0.22)
-    cbar_ax = fig.add_axes([0.25, 0.15, 0.5, 0.03])
-    fig.colorbar(sm, cax=cbar_ax, orientation="horizontal",
+    fig.colorbar(sm, ax=axes[0, :].tolist(), shrink=0.5, aspect=20, pad=0.02,
                  label=rf"$|\psi_{{{eig_index}}}(v)|$")
+    plt.tight_layout()
     plt.show()
