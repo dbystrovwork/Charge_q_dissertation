@@ -13,50 +13,65 @@ from networks.dsbm import generate_graph
 from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_laplacian_eig
 
 
-def cycle_tail_layout(k, p):
+def two_cycles_layout(k1, k2, p):
     """
-    Custom layout for the cycle-tail graph.
+    Custom layout for the two-cycles graph.
 
-    Cycle nodes [0, k) are placed on a unit circle with node k-1
-    (the junction node) at theta=0. The cycle is traversed
-    counter-clockwise: node 0 is one step CCW from k-1, etc.
+    C1 (nodes [0, k1)): unit circle on the left, with the junction
+    node k1-1 at theta=0 (rightmost point, facing the path).
 
-    Tail nodes [k, k+p) extend along the positive real axis
-    to the right of node k-1.
+    C2 (nodes [k1, k1+k2)): unit circle on the right, with the
+    junction node k1 at theta=pi (leftmost point, facing the path).
+
+    Path nodes are evenly spaced along y=0 between the two junction
+    nodes.
 
     Returns:
         pos: dict mapping node index -> (x, y)
     """
     pos = {}
     radius = 1.0
-    tail_spacing = 2 * np.pi * radius / k  # match cycle edge length
+    gap = max(p * 0.6, 1.0)  # space between circle edges for the path
 
-    # Cycle: node k-1 at theta=0, node k-2 at theta=2pi/k, etc.
-    # i.e. node i at theta = (k-1-i) * 2pi/k
-    for i in range(k):
-        theta = (k - 1 - i) * 2 * np.pi / k
+    # C1 centred at x=0. Junction node k1-1 at theta=0 (x=radius).
+    # Cycle traversed CCW: node i at theta = (k1-1-i) * 2pi/k1
+    for i in range(k1):
+        theta = (k1 - 1 - i) * 2 * np.pi / k1
         pos[i] = (radius * np.cos(theta), radius * np.sin(theta))
 
-    # Tail: starting from node k-1 (at theta=0, x=radius),
-    # extend rightward along y=0
-    x_start = radius + tail_spacing
-    for j in range(p):
-        pos[k + j] = (x_start + j * tail_spacing, 0.0)
+    # C2 centred at x = 2*radius + gap. Junction node k1 at theta=pi
+    # (leftmost point). Cycle traversed CCW: node k1+i at
+    # theta = pi - i * 2pi/k2
+    cx2 = 2 * radius + gap
+    for i in range(k2):
+        theta = np.pi - i * 2 * np.pi / k2
+        pos[k1 + i] = (cx2 + radius * np.cos(theta), radius * np.sin(theta))
+
+    # Path nodes between the two junction nodes along y=0
+    # Junction of C1: pos[k1-1] = (radius, 0)
+    # Junction of C2: pos[k1]   = (cx2 - radius, 0)
+    x_left = radius
+    x_right = cx2 - radius
+    path_start = k1 + k2
+    num_path_nodes = p - 1  # p edges means p-1 interior nodes
+    for j in range(num_path_nodes):
+        t = (j + 1) / p
+        pos[path_start + j] = (x_left + t * (x_right - x_left), 0.0)
 
     return pos
 
 
-def plot_cycle_tail_fiedler(k=10, p=5, q=0.25, eig_index=1,
+def plot_two_cycles_fiedler(k1=7, k2=11, p=15, q=0.25, eig_index=1,
                             ax=None, title=None, seed=42):
     """
-    Fiedler-style eigenvector plot for the cycle-tail graph with
-    a custom layout: cycle as a circle, tail extending rightward.
+    Fiedler-style eigenvector plot for the two-cycles graph with
+    a custom layout: two circles connected by a horizontal path.
 
     Node colour = eigenvector magnitude.
     Phase annotation on each node.
     """
     edges, labels, num_nodes = generate_graph(
-        "cycle_tail", seed=seed, k=k, p=p
+        "two_cycles", seed=seed, k1=k1, k2=k2, p=p
     )
 
     _, eigenvectors = magnetic_laplacian_eig(
@@ -71,7 +86,7 @@ def plot_cycle_tail_fiedler(k=10, p=5, q=0.25, eig_index=1,
     )
 
     # Layout
-    pos = cycle_tail_layout(k, p)
+    pos = two_cycles_layout(k1, k2, p)
 
     # Colourmap for magnitude
     mag_cmap = LinearSegmentedColormap.from_list(
@@ -84,7 +99,7 @@ def plot_cycle_tail_fiedler(k=10, p=5, q=0.25, eig_index=1,
     node_sizes = min_size + (max_size - min_size) * mag_norm
 
     if ax is None:
-        _, ax = plt.subplots(figsize=(10, 6))
+        _, ax = plt.subplots(figsize=(14, 6))
     ax.set_aspect("equal")
     ax.axis("off")
 
@@ -148,23 +163,24 @@ def plot_cycle_tail_fiedler(k=10, p=5, q=0.25, eig_index=1,
 
     if title is None:
         title = (
-            rf"Cycle-tail — $q={q:.2f}$, eigenvector {eig_index}, "
-            rf"$k={k}$, $p={p}$"
+            rf"Two cycles — $q={q:.2f}$, eigenvector {eig_index}, "
+            rf"$k_1={k1}$, $k_2={k2}$, $p={p}$"
         )
     ax.set_title(title, fontsize=13, pad=10)
 
     return ax
 
 
-ks = [6, 6]
+k1s = [6, 6]
+k2s = [10, 10]
 ps = [5, 5]
-qs = [1/4, 1/6]
+qs = [1/6, 1/10]
 
 if __name__ == "__main__":
-    n = len(ks)
-    fig, axes = plt.subplots(1, n, figsize=(10 * n, 6), squeeze=False)
+    n = len(k1s)
+    fig, axes = plt.subplots(1, n, figsize=(14 * n, 6), squeeze=False)
     for i in range(n):
-        plot_cycle_tail_fiedler(k=ks[i], p=ps[i], q=qs[i], eig_index=1,
-                                ax=axes[0, i])
+        plot_two_cycles_fiedler(k1=k1s[i], k2=k2s[i], p=ps[i], q=qs[i],
+                                eig_index=1, ax=axes[0, i])
     plt.tight_layout()
     plt.show()
