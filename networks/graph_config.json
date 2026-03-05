@@ -69,5 +69,10 @@
     "cycle_tail": {
         "k": 10,
         "p": 5
+    },
+    "random_dag": {
+        "num_layers": 5,
+        "n_per_layer": 40,
+        "p": 0.05
     }
 }

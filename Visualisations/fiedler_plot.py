@@ -236,5 +236,5 @@ def plot_eigenvector_graph(graph_type, q, eig_index=1, figsize=(8, 6),
 
 
 if __name__ == "__main__":
-    fig, ax = plot_eigenvector_graph("cycle_tail", q=1/10, eig_index=1, k=10, p=3)
+    fig, ax = plot_eigenvector_graph("random_dag", q=1/10, eig_index=1, num_layers=3, n_per_layer=3, p=1)
     plt.show()
