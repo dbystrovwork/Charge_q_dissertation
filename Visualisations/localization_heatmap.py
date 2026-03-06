@@ -143,7 +143,7 @@ def plot_nb_localization_heatmap(edges, num_nodes, k, q=None):
     ax.set_xlabel("Eigenvector index")
     ax.set_xticks(range(k))
     ax.set_xticklabels(
-        [f"ψ{i+1}\n|λ|={np.abs(eigenvalues[i]):.2f}" for i in range(k)],
+        [f"ψ{i}\n|λ|={np.abs(eigenvalues[i]):.2f}" for i in range(k)],
         fontsize=7,
     )
     ax.set_ylabel(f"Directed edge  ({num_edges} edges)")
@@ -161,11 +161,11 @@ def plot_nb_localization_heatmap(edges, num_nodes, k, q=None):
     return fig
 
 
-GRAPH_TYPE = "dcsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+GRAPH_TYPE = "dsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_localization_heatmap(edges, num_nodes, q=0.2, k=6, labels=true_labels)
+    plot_localization_heatmap(edges, num_nodes, q=0.4, k=3, labels=true_labels)
     # plot_nb_localization_heatmap(edges, num_nodes, k=6, q=0.25)
     plt.show()

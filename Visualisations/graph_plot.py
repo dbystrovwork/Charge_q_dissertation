@@ -51,7 +51,7 @@ def plot_graph(edges, num_nodes, labels=None, node_sizes=None, ax=None):
         G=G,
         pos=pos,
         ax=ax,
-        node_size=20,
+        node_size=50,
         width=0.3,
         arrowsize=4,
         alpha=0.8,
