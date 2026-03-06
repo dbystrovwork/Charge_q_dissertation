@@ -7,20 +7,20 @@ import matplotlib.pyplot as plt
 
 plt.style.use("seaborn-v0_8-paper")
 
-from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_adjacency_eig
+from laplacians.magnetic_laplacian.mag_lap_ops import magnetic_adjacency_eig, magnetic_laplacian_eig
 from networks.dsbm import generate_graph
 
 # === Parameters ===
 SEED = 42
 GRAPH = "dcsbm_cycle"
 Q = 0.2
-EIGENVECTOR = 1  # 1-indexed
+EIGENVECTOR = 0# 1-indexed
 
 edges, labels, num_nodes = generate_graph(GRAPH, seed=SEED)
 K = len(np.unique(labels))
 
 # === Compute eigenvectors ===
-eigenvalues, eigenvectors = magnetic_adjacency_eig(edges, num_nodes, Q, k=K)
+eigenvalues, eigenvectors = magnetic_laplacian_eig(edges, num_nodes, Q, k=K)
 
 # Sort by eigenvalue so eigenvector indices are consistent
 order = np.argsort(eigenvalues.real)

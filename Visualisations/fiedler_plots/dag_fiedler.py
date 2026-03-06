@@ -153,7 +153,7 @@ def plot_dag_fiedler(num_layers=5, n_per_layer=40, p=0.05, q=0.25,
 num_layerss = [3]
 n_per_layers = [3]
 ps = [1]
-qs = [0.2]
+qs = [0.4]
 
 if __name__ == "__main__":
     n = len(num_layerss)
