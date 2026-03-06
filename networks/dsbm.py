@@ -270,4 +270,7 @@ def generate_graph(graph_type, seed=None, **overrides):
     else:
         num_nodes = config["k"] * config["n_per_class"]
 
+    avg_degree = 2 * len(edges) / num_nodes
+    print(f"[{graph_type}] nodes={num_nodes}, edges={len(edges)}, avg_degree={avg_degree:.2f}")
+
     return edges, labels, num_nodes

@@ -12,20 +12,15 @@ from networks.dsbm import generate_graph
 
 # === Parameters ===
 SEED = 42
-GRAPH = "dcsbm_cycle"
-Q = 0.2
+GRAPH = "dsbm_cycle"
+Q = 1/3
 EIGENVECTOR = 0# 1-indexed
 
 edges, labels, num_nodes = generate_graph(GRAPH, seed=SEED)
 K = len(np.unique(labels))
 
 # === Compute eigenvectors ===
-eigenvalues, eigenvectors = magnetic_laplacian_eig(edges, num_nodes, Q, k=K)
-
-# Sort by eigenvalue so eigenvector indices are consistent
-order = np.argsort(eigenvalues.real)
-eigenvalues = eigenvalues[order]
-eigenvectors = eigenvectors[:, order]
+eigenvalues, eigenvectors = magnetic_laplacian_eig(edges, num_nodes, Q, k=EIGENVECTOR + 1, normalized=True)
 
 vec = eigenvectors[:, EIGENVECTOR - 1]
 phases = np.angle(vec)

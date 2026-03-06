@@ -89,9 +89,6 @@ def _sweep_q(eig_fn, edges, num_nodes, true_labels, q_values, k, metric_fn):
     for q in q_values:
         eigenvalues, eigenvectors = eig_fn(edges, num_nodes, q, k)
 
-        if q == 0:
-            print(eigenvalues[0])
-
         ipr_per_vec = np.array([
             inverse_participation_ratio(eigenvectors[:, i] / np.linalg.norm(eigenvectors[:, i]))
             for i in range(k)
@@ -238,7 +235,7 @@ def localization_experiment(
     return results
 
 
-GRAPH_TYPE = "dcsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+GRAPH_TYPE = "dsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 OPERATORS = ["Magnetic Laplacian"]  # ["Magnetic Laplacian"]
 
@@ -246,8 +243,8 @@ if __name__ == "__main__":
     localization_experiment(
         graph_type=GRAPH_TYPE,
         operators=OPERATORS,
-        n_repeats=5,
+        n_repeats=20,
         metric="Accuracy",
-        k=8,
+        k=3,
         plot_k=3
     )
