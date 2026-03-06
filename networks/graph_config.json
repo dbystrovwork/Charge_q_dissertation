@@ -47,13 +47,8 @@
     },
     "sbm": {
         "k": 5,
-<<<<<<< HEAD
-        "n_per_class": 50,
-        "p_in": 0.02,
-=======
         "n_per_class": 100,
         "p_in": 0.1,
->>>>>>> bd6ab317727ad530ff09ec5cb800ee31d2eb8dc8
         "p_out": 0.01
     },
     "directed_barbell": {
