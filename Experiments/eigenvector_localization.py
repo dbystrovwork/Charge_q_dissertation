@@ -39,7 +39,7 @@ def inverse_participation_ratio(vec):
 
 # ── operator registry ───────────────────────────────────────────────
 def _ml_eig(edges, num_nodes, q, k):
-    return magnetic_laplacian_eig(edges, num_nodes, q, k=k, normalized=True)
+    return magnetic_laplacian_eig(edges, num_nodes, q, k=k, normalized=False)
 
 
 def _bh_eig(edges, num_nodes, q, k):
@@ -89,8 +89,11 @@ def _sweep_q(eig_fn, edges, num_nodes, true_labels, q_values, k, metric_fn):
     for q in q_values:
         eigenvalues, eigenvectors = eig_fn(edges, num_nodes, q, k)
 
+        if q == 0:
+            print(eigenvalues[0])
+
         ipr_per_vec = np.array([
-            inverse_participation_ratio(eigenvectors[:, i])
+            inverse_participation_ratio(eigenvectors[:, i] / np.linalg.norm(eigenvectors[:, i]))
             for i in range(k)
         ])
         ipr_list.append(ipr_per_vec)
@@ -103,18 +106,14 @@ def _sweep_q(eig_fn, edges, num_nodes, true_labels, q_values, k, metric_fn):
 
 
 def _plot_row(axes, q_values, mean_ipr, std_ipr, mean_metric, std_metric,
-              k, n_repeats, num_nodes, operator, graph_type, metric_name):
+              k, n_repeats, num_nodes, operator, graph_type, metric_name,
+              plot_k=None):
     """Plot IPR (and optional clustering metric) into a row of axes."""
     ax = axes[0]
-    for i in range(k):
-        ax.plot(q_values, mean_ipr[:, i], label=f"ψ{i+1}")
-        if n_repeats > 1:
-            ax.fill_between(
-                q_values,
-                mean_ipr[:, i] - std_ipr[:, i],
-                mean_ipr[:, i] + std_ipr[:, i],
-                alpha=0.2,
-            )
+    if plot_k is None:
+        plot_k = k
+    for i in range(plot_k):
+        ax.plot(q_values, mean_ipr[:, i], label=f"ψ{i}")
 
     ax.axhline(1 / num_nodes, color="black", linestyle="--", label="1/N")
     ax.set_xlabel("q")
@@ -143,6 +142,7 @@ def localization_experiment(
     graph_type=None,
     operators=None,
     k=6,
+    plot_k=None,
     q_values=None,
     n_repeats=1,
     seed=42,
@@ -230,7 +230,7 @@ def localization_experiment(
             mean_ipr, std_ipr, mean_metric, std_metric = results[op_name]
             _plot_row(axes[row], q_values, mean_ipr, std_ipr,
                       mean_metric, std_metric, k, n_repeats, num_nodes,
-                      op_name, graph_type, active_metric_name)
+                      op_name, graph_type, active_metric_name, plot_k=plot_k)
 
         plt.tight_layout()
         plt.show()
@@ -238,7 +238,7 @@ def localization_experiment(
     return results
 
 
-GRAPH_TYPE = "two_cycles"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+GRAPH_TYPE = "dcsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 OPERATORS = ["Magnetic Laplacian"]  # ["Magnetic Laplacian"]
 
@@ -246,7 +246,8 @@ if __name__ == "__main__":
     localization_experiment(
         graph_type=GRAPH_TYPE,
         operators=OPERATORS,
-        n_repeats=1,
-        metric=None,
-        k=5
+        n_repeats=5,
+        metric="Accuracy",
+        k=8,
+        plot_k=3
     )
