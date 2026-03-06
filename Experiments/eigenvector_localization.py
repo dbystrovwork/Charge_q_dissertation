@@ -243,8 +243,8 @@ if __name__ == "__main__":
     localization_experiment(
         graph_type=GRAPH_TYPE,
         operators=OPERATORS,
-        n_repeats=30,
+        n_repeats=1,
         metric="Accuracy",
-        k=3,
+        k=5,
         plot_k=3
     )

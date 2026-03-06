@@ -166,6 +166,6 @@ GRAPH_TYPE = "dsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_ele
 
 if __name__ == "__main__":
     edges, true_labels, num_nodes = generate_graph(GRAPH_TYPE, seed=42)
-    plot_localization_heatmap(edges, num_nodes, q=0.4, k=3, labels=true_labels)
+    plot_localization_heatmap(edges, num_nodes, q=0.2, k=3, labels=true_labels)
     # plot_nb_localization_heatmap(edges, num_nodes, k=6, q=0.25)
     plt.show()
