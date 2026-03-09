@@ -9,6 +9,7 @@ plt.style.use("seaborn-v0_8-paper")
 
 from sklearn.metrics import normalized_mutual_info_score, adjusted_rand_score
 from scipy.optimize import linear_sum_assignment
+from scipy.ndimage import gaussian_filter1d
 
 from networks.dsbm import generate_graph
 from laplacians.magnetic_laplacian.mag_lap_ops import (
@@ -104,7 +105,7 @@ def _sweep_q(eig_fn, edges, num_nodes, true_labels, q_values, k, metric_fn):
 
 def _plot_row(axes, q_values, mean_ipr, std_ipr, mean_metric, std_metric,
               k, n_repeats, num_nodes, operator, graph_type, metric_name,
-              plot_k=None):
+              plot_k=None, smooth_sigma=None):
     """Plot IPR (and optional clustering metric) into a row of axes."""
     ax = axes[0]
     if plot_k is None:
@@ -121,12 +122,18 @@ def _plot_row(axes, q_values, mean_ipr, std_ipr, mean_metric, std_metric,
 
     if metric_name is not None:
         ax = axes[1]
-        ax.plot(q_values, mean_metric)
-        if n_repeats > 1:
+        plot_mean = mean_metric
+        plot_std = std_metric
+        if smooth_sigma is not None and smooth_sigma > 0:
+            plot_mean = gaussian_filter1d(mean_metric, sigma=smooth_sigma)
+            if plot_std is not None:
+                plot_std = gaussian_filter1d(std_metric, sigma=smooth_sigma)
+        ax.plot(q_values, plot_mean)
+        if n_repeats > 1 and plot_std is not None:
             ax.fill_between(
                 q_values,
-                mean_metric - std_metric,
-                mean_metric + std_metric,
+                plot_mean - plot_std,
+                plot_mean + plot_std,
                 alpha=0.2,
             )
         ax.set_xlabel("q")
@@ -145,6 +152,7 @@ def localization_experiment(
     seed=42,
     plot=True,
     metric=None,
+    smooth_sigma=None,
 ):
     """
     Measure eigenvector localization (IPR) as a function of q.
@@ -196,7 +204,7 @@ def localization_experiment(
             use_metric = metric_fn is not None and has_labels
             active_metric_fn = metric_fn if use_metric else None
 
-            ipr, met = _sweep_q(eig_fn, edges, num_nodes, true_labels,
+            ipr, met = _sweep_q(eig_fn, edges, num_nodes, true_labels, 
                                 q_values, k, active_metric_fn)
             all_ipr.append(ipr)
             if use_metric:
@@ -227,7 +235,8 @@ def localization_experiment(
             mean_ipr, std_ipr, mean_metric, std_metric = results[op_name]
             _plot_row(axes[row], q_values, mean_ipr, std_ipr,
                       mean_metric, std_metric, k, n_repeats, num_nodes,
-                      op_name, graph_type, active_metric_name, plot_k=plot_k)
+                      op_name, graph_type, active_metric_name, plot_k=plot_k,
+                      smooth_sigma=smooth_sigma)
 
         plt.tight_layout()
         plt.show()
@@ -235,7 +244,7 @@ def localization_experiment(
     return results
 
 
-GRAPH_TYPE = "dsbm_cycle"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
+GRAPH_TYPE = "dsbm_cycle_general"  # "directed_barbell", "dsbm_cycle", "cora_ml", "c_elegans", "food_web"
 
 OPERATORS = ["Magnetic Laplacian"]  # ["Magnetic Laplacian"]
 
@@ -243,8 +252,9 @@ if __name__ == "__main__":
     localization_experiment(
         graph_type=GRAPH_TYPE,
         operators=OPERATORS,
-        n_repeats=1,
-        metric="Accuracy",
+        n_repeats=10,
+        metric="NMI",
         k=5,
-        plot_k=3
+        plot_k=3,
+        smooth_sigma=1.0,
     )

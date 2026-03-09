@@ -49,7 +49,7 @@ def dsbm_cycle(k, n_per_class, p, eta, seed=None):
     labels = np.repeat(np.arange(k), n_per_class)
 
     # Build F matrix
-    F = 0.5 * np.ones((k, k))
+    F = 0.5 * np.eye(k)
     for a in range(k):
         b = (a + 1) % k
         F[a, b] = 1 - eta
@@ -64,6 +64,56 @@ def dsbm_cycle(k, n_per_class, p, eta, seed=None):
                     edges.append((i, j))
                 else:
                     edges.append((j, i))
+
+    return edges, labels
+
+
+def dsbm_cycle_general(k, n_per_class, p, fwd, bwd, r, seed=None):
+    """
+    Directed Stochastic Block Model with cyclic structure and per-edge probabilities.
+
+    Communities are arranged in a C_k cycle. Each cycle edge a -> (a+1) mod k
+    has its own forward and backward probability.
+
+    For an ordered pair of nodes (i, j) with i != j:
+      - Same community:        edge i->j with probability p
+      - j in next community:   edge i->j with probability fwd[ci]
+      - j in prev community:   edge i->j with probability bwd[cj]
+      - Otherwise:             edge i->j with probability r
+
+    Args:
+        k: Number of communities
+        n_per_class: Nodes per community
+        p: Within-community directed edge probability
+        fwd: List of length k; fwd[a] = P(edge from community a to community (a+1) mod k)
+        bwd: List of length k; bwd[a] = P(edge from community (a+1) mod k back to community a)
+        r: Edge probability between non-adjacent communities
+        seed: Random seed
+
+    Returns:
+        edges: List of (i, j) tuples
+        labels: Array of community labels
+    """
+    rng = np.random.default_rng(seed)
+    num_nodes = k * n_per_class
+    labels = np.repeat(np.arange(k), n_per_class)
+
+    edges = []
+    for i in range(num_nodes):
+        for j in range(num_nodes):
+            if i == j:
+                continue
+            ci, cj = labels[i], labels[j]
+            if ci == cj:
+                prob = p
+            elif cj == (ci + 1) % k:
+                prob = fwd[ci]
+            elif ci == (cj + 1) % k:
+                prob = bwd[cj]
+            else:
+                prob = r
+            if rng.random() < prob:
+                edges.append((i, j))
 
     return edges, labels
 
@@ -200,7 +250,7 @@ CONFIG_PATH = Path(__file__).parent / "graph_config.json"
 _GENERATORS = {
     "dsbm_cycle": dsbm_cycle,
     "dcsbm_cycle": dcsbm_cycle,
-    # "dsbm_cycle_general": dsbm_cycle_general,  # TODO: restore when reimplemented
+    "dsbm_cycle_general": dsbm_cycle_general,
     "nested_dsbm_cycle": nested_dsbm_cycle,
     "directed_small_world": directed_small_world,
     "directed_erdos_renyi": directed_erdos_renyi,
